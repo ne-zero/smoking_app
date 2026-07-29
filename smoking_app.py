@@ -1,4 +1,5 @@
 from pathlib import Path
+from textwrap import dedent
 
 import joblib
 import pandas as pd
@@ -717,6 +718,40 @@ def validate(values: dict) -> list[str]:
     return errors
 
 
+
+def slider_input(
+    label: str,
+    minimum: float,
+    maximum: float,
+    default: float,
+    step: float,
+    key: str,
+    note: str,
+) -> float:
+    """Render a styled slider for an important numeric model feature."""
+    value = st.slider(
+        label,
+        min_value=minimum,
+        max_value=maximum,
+        value=default,
+        step=step,
+        key=key,
+    )
+
+    st.markdown(
+        (
+            '<div class="slider-value">'
+            f'<span>range {minimum:g}–{maximum:g}</span>'
+            f'<strong>selected {value:g}</strong>'
+            '</div>'
+        ),
+        unsafe_allow_html=True,
+    )
+
+    desc(note)
+    return value
+
+
 def make_prediction(values: dict) -> dict:
     model_input = encode(values)
 
@@ -833,7 +868,7 @@ if "prediction_inputs" not in st.session_state:
 # IMPRESSIVE TOP SECTION
 # =========================================================
 st.markdown(
-    """
+    dedent("""
     <div class="ticker">
         <div class="ticker-track">
             <span>Quick or full assessment</span>
@@ -935,7 +970,7 @@ st.markdown(
             </div>
         </div>
     </section>
-    """,
+    """),
     unsafe_allow_html=True,
 )
 
@@ -1057,37 +1092,37 @@ if mode == "Quick Assessment":
             lab_1, lab_2, lab_3 = st.columns(3)
 
             with lab_1:
-                gtp = st.number_input(
+                gtp = slider_input(
                     "Gamma-glutamyl transferase (Gtp)",
-                    min_value=1.0,
-                    max_value=999.0,
-                    value=25.0,
-                    step=1.0,
-                    key="quick_gtp",
+                    1.0,
+                    999.0,
+                    25.0,
+                    1.0,
+                    "quick_gtp",
+                    "High-priority liver-enzyme measurement.",
                 )
-                desc("High-priority liver-enzyme measurement.")
 
             with lab_2:
-                hemoglobin = st.number_input(
+                hemoglobin = slider_input(
                     "Haemoglobin concentration (hemoglobin)",
-                    min_value=4.9,
-                    max_value=21.1,
-                    value=14.8,
-                    step=0.1,
-                    key="quick_hemoglobin",
+                    4.9,
+                    21.1,
+                    14.8,
+                    0.1,
+                    "quick_hemoglobin",
+                    "High-priority oxygen-carrying blood measurement.",
                 )
-                desc("High-priority oxygen-carrying blood measurement.")
 
             with lab_3:
-                triglyceride = st.number_input(
+                triglyceride = slider_input(
                     "Triglycerides (triglyceride)",
-                    min_value=8.0,
-                    max_value=999.0,
-                    value=108.0,
-                    step=1.0,
-                    key="quick_triglyceride",
+                    8.0,
+                    999.0,
+                    108.0,
+                    1.0,
+                    "quick_triglyceride",
+                    "High-priority blood-fat measurement.",
                 )
-                desc("High-priority blood-fat measurement.")
 
             st.markdown(
                 """
@@ -1244,36 +1279,36 @@ else:
                     desc("Standing height measured in centimetres.")
 
                 with priority_2:
-                    gtp = st.number_input(
+                    gtp = slider_input(
                         "Gamma-glutamyl transferase (Gtp)",
-                        min_value=1.0,
-                        max_value=999.0,
-                        value=25.0,
-                        step=1.0,
-                        key="full_gtp",
+                        1.0,
+                        999.0,
+                        25.0,
+                        1.0,
+                        "full_gtp",
+                        "High-priority liver-enzyme measurement.",
                     )
-                    desc("High-priority liver-enzyme measurement.")
 
-                    hemoglobin = st.number_input(
+                    hemoglobin = slider_input(
                         "Haemoglobin concentration (hemoglobin)",
-                        min_value=4.9,
-                        max_value=21.1,
-                        value=14.8,
-                        step=0.1,
-                        key="full_hemoglobin",
+                        4.9,
+                        21.1,
+                        14.8,
+                        0.1,
+                        "full_hemoglobin",
+                        "High-priority oxygen-carrying blood measurement.",
                     )
-                    desc("High-priority oxygen-carrying blood measurement.")
 
                 with priority_3:
-                    triglyceride = st.number_input(
+                    triglyceride = slider_input(
                         "Triglycerides (triglyceride)",
-                        min_value=8.0,
-                        max_value=999.0,
-                        value=108.0,
-                        step=1.0,
-                        key="full_triglyceride",
+                        8.0,
+                        999.0,
+                        108.0,
+                        1.0,
+                        "full_triglyceride",
+                        "High-priority blood-fat measurement.",
                     )
-                    desc("High-priority blood-fat measurement.")
 
                     age = st.number_input(
                         "Age in years (age)",
