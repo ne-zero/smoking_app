@@ -62,11 +62,13 @@ st.markdown(
 
     .stApp{
         background:
-            radial-gradient(circle at 12% -6%,
-                rgba(255,122,61,.14), transparent 34rem),
-            radial-gradient(circle at 100% 0%,
-                rgba(255,89,103,.07), transparent 30rem),
-            linear-gradient(180deg,var(--bg-deep) 0%,var(--bg) 100%);
+            radial-gradient(circle at 12% -8%,
+                rgba(255,122,61,.20), transparent 31rem),
+            radial-gradient(circle at 93% 3%,
+                rgba(255,174,99,.10), transparent 24rem),
+            radial-gradient(circle at 50% 45%,
+                rgba(255,255,255,.025), transparent 34rem),
+            linear-gradient(180deg,#0d0907 0%,#120c08 48%,#0d0907 100%);
         color:var(--ink)!important;
     }
 
@@ -251,11 +253,15 @@ st.markdown(
 
     /* ---------- reusable cards ---------- */
     .card{
-        background:var(--card);
-        border:1px solid var(--line);
-        border-radius:18px;
-        padding:1.2rem 1.35rem;
+        background:
+            linear-gradient(145deg,rgba(28,18,11,.98),rgba(19,13,9,.98));
+        border:1px solid rgba(255,122,61,.12);
+        border-radius:20px;
+        padding:1.25rem 1.4rem;
         min-height:125px;
+        box-shadow:
+            0 18px 45px rgba(0,0,0,.22),
+            inset 0 1px 0 rgba(255,255,255,.025);
     }
 
     .kicker{
@@ -339,10 +345,14 @@ st.markdown(
 
     /* ---------- form shell ---------- */
     div[data-testid="stVerticalBlockBorderWrapper"]{
-        background:var(--card);
-        border:1px solid var(--line)!important;
-        border-radius:22px!important;
-        padding:.35rem;
+        background:
+            linear-gradient(145deg,rgba(25,16,10,.99),rgba(16,11,8,.99));
+        border:1px solid rgba(255,122,61,.16)!important;
+        border-radius:24px!important;
+        padding:.45rem;
+        box-shadow:
+            0 22px 56px rgba(0,0,0,.26),
+            inset 0 1px 0 rgba(255,255,255,.025);
     }
 
     div[data-testid="stVerticalBlockBorderWrapper"]
@@ -834,6 +844,24 @@ def validate(values: dict) -> list[str]:
 
 
 
+def _sync_slider_to_number(widget_key: str) -> None:
+    st.session_state[f"{widget_key}_number"] = st.session_state[
+        f"{widget_key}_slider"
+    ]
+
+
+def _sync_number_to_slider(
+    widget_key: str,
+    minimum: float,
+    maximum: float,
+) -> None:
+    typed_value = st.session_state[f"{widget_key}_number"]
+    st.session_state[f"{widget_key}_slider"] = max(
+        minimum,
+        min(maximum, typed_value),
+    )
+
+
 def slider_input(
     feature_name: str,
     label: str,
@@ -844,15 +872,49 @@ def slider_input(
     key: str,
     note: str,
 ) -> float:
-    """Render a compact Good / Average / Bad status slider."""
-    value = st.slider(
-        label,
-        min_value=minimum,
-        max_value=maximum,
-        value=default,
-        step=step,
-        key=key,
+    """Render a synchronized slider and exact-value number input."""
+    slider_key = f"{key}_slider"
+    number_key = f"{key}_number"
+
+    if slider_key not in st.session_state:
+        st.session_state[slider_key] = default
+
+    if number_key not in st.session_state:
+        st.session_state[number_key] = default
+
+    st.markdown(
+        f"**{label}**"
     )
+
+    slider_column, number_column = st.columns([3.2, 1])
+
+    with slider_column:
+        st.slider(
+            label,
+            min_value=minimum,
+            max_value=maximum,
+            value=st.session_state[slider_key],
+            step=step,
+            key=slider_key,
+            label_visibility="collapsed",
+            on_change=_sync_slider_to_number,
+            args=(key,),
+        )
+
+    with number_column:
+        st.number_input(
+            f"{label} exact value",
+            min_value=minimum,
+            max_value=maximum,
+            value=st.session_state[number_key],
+            step=step,
+            key=number_key,
+            label_visibility="collapsed",
+            on_change=_sync_number_to_slider,
+            args=(key, minimum, maximum),
+        )
+
+    value = st.session_state[number_key]
 
     reference = PRIORITY_REFERENCE_BANDS[feature_name]
     low = reference["low"]
@@ -925,7 +987,7 @@ def render_result_panel(result: dict | None, mode: str) -> None:
             st.markdown(
                 f"""
                 <div class="result-card result-smoker">
-                    <div class="kicker">Model prediction</div>
+                    <div class="live-pill">Live prediction</div><div class="kicker">Model prediction</div>
                     <h3>Predicted class: smoker</h3>
                     <p>
                         The submitted values are more similar to records
@@ -941,7 +1003,7 @@ def render_result_panel(result: dict | None, mode: str) -> None:
             st.markdown(
                 f"""
                 <div class="result-card result-nonsmoker">
-                    <div class="kicker">Model prediction</div>
+                    <div class="live-pill">Live prediction</div><div class="kicker">Model prediction</div>
                     <h3>Predicted class: non-smoker</h3>
                     <p>
                         The submitted values are more similar to records
@@ -1014,7 +1076,7 @@ components.html(
         }
 
         .hero {
-            padding: 62px 16px 52px;
+            padding: 42px 16px 36px;
             color: #f3ede4;
             border-bottom: 1px solid #1f170f;
         }
@@ -1052,10 +1114,10 @@ components.html(
 
         h1 {
             max-width: 760px;
-            margin: 22px 0 0;
+            margin: 16px 0 0;
             color: #f3ede4;
             font-family: Georgia, serif;
-            font-size: clamp(44px, 6vw, 76px);
+            font-size: clamp(40px, 5.2vw, 68px);
             line-height: .98;
             letter-spacing: -.035em;
             font-weight: 600;
@@ -1068,7 +1130,7 @@ components.html(
 
         p {
             max-width: 560px;
-            margin: 22px 0 0;
+            margin: 16px 0 0;
             color: #b5aa9d;
             font-size: 16px;
             line-height: 1.7;
@@ -1098,7 +1160,7 @@ components.html(
             display: flex;
             flex-wrap: wrap;
             gap: 28px;
-            margin-top: 34px;
+            margin-top: 24px;
         }
 
         .meta-item {
@@ -1216,7 +1278,7 @@ components.html(
         </div>
     </section>
     """,
-    height=560,
+    height=475,
     scrolling=False,
 )
 
@@ -1419,39 +1481,40 @@ if mode == "Quick Assessment":
                 unsafe_allow_html=True,
             )
 
-            st.write("")
-
-            quick_predict = st.button(
-                "Generate quick prediction",
-                type="primary",
-                use_container_width=True,
-                key="quick_predict",
+            st.markdown(
+                """
+                <div class="info-box">
+                    Live prediction is active. The result updates automatically
+                    whenever you change a value.
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
 
-        if quick_predict:
-            quick_values = REFERENCE_DEFAULTS.copy()
+        quick_values = REFERENCE_DEFAULTS.copy()
 
-            quick_values.update(
-                {
-                    "gender": gender,
-                    "height(cm)": height,
-                    "Gtp": gtp,
-                    "hemoglobin": hemoglobin,
-                    "triglyceride": triglyceride,
-                }
+        quick_values.update(
+            {
+                "gender": gender,
+                "height(cm)": height,
+                "Gtp": gtp,
+                "hemoglobin": hemoglobin,
+                "triglyceride": triglyceride,
+            }
+        )
+
+        errors = validate(quick_values)
+
+        if errors:
+            st.session_state.prediction_result = None
+            for error in errors:
+                st.error(error)
+        else:
+            st.session_state.prediction_result = make_prediction(
+                quick_values
             )
-
-            errors = validate(quick_values)
-
-            if errors:
-                for error in errors:
-                    st.error(error)
-            else:
-                st.session_state.prediction_result = make_prediction(
-                    quick_values
-                )
-                st.session_state.prediction_inputs = quick_values
-                st.session_state.prediction_mode = mode
+            st.session_state.prediction_inputs = quick_values
+            st.session_state.prediction_mode = mode
 
     with result_column:
         render_result_panel(
@@ -1762,54 +1825,55 @@ else:
                         key="full_tartar",
                     )
 
-            st.write("")
-
-            full_predict = st.button(
-                "Generate full prediction",
-                type="primary",
-                use_container_width=True,
-                key="full_predict",
+            st.markdown(
+                """
+                <div class="info-box">
+                    Live prediction is active. The result updates automatically
+                    whenever you change a value.
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
 
-        if full_predict:
-            full_values = {
-                "gender": gender,
-                "age": age,
-                "height(cm)": height,
-                "weight(kg)": weight,
-                "waist(cm)": waist,
-                "eyesight(left)": eyesight_left,
-                "eyesight(right)": eyesight_right,
-                "hearing(left)": hearing_left,
-                "hearing(right)": hearing_right,
-                "systolic": systolic,
-                "relaxation": relaxation,
-                "fasting blood sugar": fasting,
-                "Cholesterol": cholesterol,
-                "triglyceride": triglyceride,
-                "HDL": hdl,
-                "LDL": ldl,
-                "hemoglobin": hemoglobin,
-                "Urine protein": urine,
-                "serum creatinine": creatinine,
-                "AST": ast,
-                "ALT": alt,
-                "Gtp": gtp,
-                "dental caries": binary(caries_answer),
-                "tartar": tartar,
-            }
+        full_values = {
+            "gender": gender,
+            "age": age,
+            "height(cm)": height,
+            "weight(kg)": weight,
+            "waist(cm)": waist,
+            "eyesight(left)": eyesight_left,
+            "eyesight(right)": eyesight_right,
+            "hearing(left)": hearing_left,
+            "hearing(right)": hearing_right,
+            "systolic": systolic,
+            "relaxation": relaxation,
+            "fasting blood sugar": fasting,
+            "Cholesterol": cholesterol,
+            "triglyceride": triglyceride,
+            "HDL": hdl,
+            "LDL": ldl,
+            "hemoglobin": hemoglobin,
+            "Urine protein": urine,
+            "serum creatinine": creatinine,
+            "AST": ast,
+            "ALT": alt,
+            "Gtp": gtp,
+            "dental caries": binary(caries_answer),
+            "tartar": tartar,
+        }
 
-            errors = validate(full_values)
+        errors = validate(full_values)
 
-            if errors:
-                for error in errors:
-                    st.error(error)
-            else:
-                st.session_state.prediction_result = make_prediction(
-                    full_values
-                )
-                st.session_state.prediction_inputs = full_values
-                st.session_state.prediction_mode = mode
+        if errors:
+            st.session_state.prediction_result = None
+            for error in errors:
+                st.error(error)
+        else:
+            st.session_state.prediction_result = make_prediction(
+                full_values
+            )
+            st.session_state.prediction_inputs = full_values
+            st.session_state.prediction_mode = mode
 
     with result_column:
         render_result_panel(
