@@ -4,6 +4,7 @@ from textwrap import dedent
 import joblib
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 
 # =========================================================
@@ -598,7 +599,102 @@ st.markdown(
             padding-right:.8rem;
         }
     }
-    </style>
+    
+    /* Compact priority slider status */
+    .slider-status-row{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:.5rem;
+        margin:.05rem 0 .55rem;
+    }
+
+    .slider-selected{
+        font-family:var(--font-mono);
+        font-size:.72rem;
+        color:var(--ink-soft)!important;
+    }
+
+    .slider-status{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        padding:.23rem .55rem;
+        border-radius:999px;
+        font-family:var(--font-mono);
+        font-size:.61rem;
+        font-weight:700;
+        letter-spacing:.05em;
+        text-transform:uppercase;
+    }
+
+    .slider-good{
+        color:#6bd596!important;
+        background:rgba(107,213,150,.14);
+        border:1px solid rgba(107,213,150,.34);
+    }
+
+    .slider-average{
+        color:#ffbf4d!important;
+        background:rgba(255,191,77,.14);
+        border:1px solid rgba(255,191,77,.34);
+    }
+
+    .slider-bad{
+        color:#ff5967!important;
+        background:rgba(255,89,103,.14);
+        border:1px solid rgba(255,89,103,.34);
+    }
+
+    div[data-testid="stSlider"] [data-testid*="TickBar" i]{
+        display:none!important;
+    }
+
+    .st-key-quick_gtp div[data-baseweb="slider"] > div:first-child,
+    .st-key-full_gtp div[data-baseweb="slider"] > div:first-child{
+        background:linear-gradient(
+            90deg,
+            #ffbf4d 0%,
+            #ffbf4d 7%,
+            #6bd596 7%,
+            #6bd596 18%,
+            #ff5967 18%,
+            #ff5967 100%
+        )!important;
+    }
+
+    .st-key-quick_hemoglobin div[data-baseweb="slider"] > div:first-child,
+    .st-key-full_hemoglobin div[data-baseweb="slider"] > div:first-child{
+        background:linear-gradient(
+            90deg,
+            #ff5967 0%,
+            #ff5967 32%,
+            #ffbf4d 32%,
+            #ffbf4d 44%,
+            #6bd596 44%,
+            #6bd596 78%,
+            #ffbf4d 78%,
+            #ffbf4d 88%,
+            #ff5967 88%,
+            #ff5967 100%
+        )!important;
+    }
+
+    .st-key-quick_triglyceride div[data-baseweb="slider"] > div:first-child,
+    .st-key-full_triglyceride div[data-baseweb="slider"] > div:first-child{
+        background:linear-gradient(
+            90deg,
+            #6bd596 0%,
+            #6bd596 15%,
+            #ffbf4d 15%,
+            #ffbf4d 20%,
+            #ff5967 20%,
+            #ff5967 100%
+        )!important;
+    }
+
+
+</style>
     """,
     unsafe_allow_html=True,
 )
@@ -748,7 +844,7 @@ def slider_input(
     key: str,
     note: str,
 ) -> float:
-    """Render a priority input slider with a readable reference-status badge."""
+    """Render a compact Good / Average / Bad status slider."""
     value = st.slider(
         label,
         min_value=minimum,
@@ -763,28 +859,25 @@ def slider_input(
     high = reference["high"]
     unit = reference["unit"]
 
-    if value < low:
-        status_text = "Below reference"
-        status_class = "status-low"
-    elif value > high:
-        status_text = "Above reference"
-        status_class = "status-high"
+    width = max(high - low, 1.0)
+    average_low = low - (0.20 * width)
+    average_high = high + (0.20 * width)
+
+    if low <= value <= high:
+        status_text = "Good"
+        status_class = "slider-good"
+    elif average_low <= value <= average_high:
+        status_text = "Average"
+        status_class = "slider-average"
     else:
-        status_text = "Within reference"
-        status_class = "status-range"
+        status_text = "Bad"
+        status_class = "slider-bad"
 
     st.markdown(
         (
-            '<div class="slider-summary">'
-            '<div class="slider-reading">'
-            '<span class="slider-reading-label">Selected value</span>'
-            f'<span class="slider-reading-value">{value:g} {unit}</span>'
-            '</div>'
-            f'<span class="status-badge {status_class}">{status_text}</span>'
-            '</div>'
-            '<div class="reference-note">'
-            f'Context band: {low:g}–{high:g} {unit}. '
-            'Shown for orientation only and not as a diagnosis.'
+            '<div class="slider-status-row">'
+            f'<span class="slider-selected">{value:g} {unit}</span>'
+            f'<span class="slider-status {status_class}">{status_text}</span>'
             '</div>'
         ),
         unsafe_allow_html=True,
@@ -816,8 +909,8 @@ def render_result_panel(result: dict | None, mode: str) -> None:
                 <div class="kicker">Prediction panel</div>
                 <h3>Your result will appear here</h3>
                 <p>
-                    Enter the assessment values on the left, then generate a prediction.
-                    The result stays visible here while you review or adjust the form.
+                    Complete the assessment and select the prediction button.
+                    On desktop, the result stays visible beside the form.
                 </p>
             </div>
             """,
@@ -909,29 +1002,147 @@ if "prediction_inputs" not in st.session_state:
 # =========================================================
 # IMPRESSIVE TOP SECTION
 # =========================================================
-st.markdown(
-    dedent("""
-    <div class="ticker">
-        <div class="ticker-track">
-            <span>Quick or full assessment</span>
-            <span class="accent">·</span>
-            <span>Random Forest model</span>
-            <span class="accent">·</span>
-            <span>Screening support, not a diagnosis</span>
-            <span class="accent">·</span>
-            <span>Quick or full assessment</span>
-            <span class="accent">·</span>
-            <span>Random Forest model</span>
-            <span class="accent">·</span>
-            <span>Screening support, not a diagnosis</span>
-            <span class="accent">·</span>
-        </div>
-    </div>
+components.html(
+    """
+    <style>
+        html, body {
+            margin: 0;
+            background: transparent;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .hero {
+            padding: 62px 16px 52px;
+            color: #f3ede4;
+            border-bottom: 1px solid #1f170f;
+        }
+
+        .grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 32px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 14px;
+            border-radius: 999px;
+            color: #ff7a3d;
+            background: rgba(255,122,61,.14);
+            border: 1px solid rgba(255,122,61,.35);
+            font-family: Consolas, monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ff7a3d;
+            box-shadow: 0 0 0 3px rgba(255,122,61,.25);
+        }
+
+        h1 {
+            max-width: 760px;
+            margin: 22px 0 0;
+            color: #f3ede4;
+            font-family: Georgia, serif;
+            font-size: clamp(44px, 6vw, 76px);
+            line-height: .98;
+            letter-spacing: -.035em;
+            font-weight: 600;
+        }
+
+        h1 em {
+            color: #ff7a3d;
+            font-weight: 500;
+        }
+
+        p {
+            max-width: 560px;
+            margin: 22px 0 0;
+            color: #b5aa9d;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .gauge {
+            width: 290px;
+            min-width: 250px;
+            text-align: center;
+        }
+
+        .gauge svg {
+            width: 100%;
+        }
+
+        .gauge-label {
+            margin-top: -2px;
+            color: #b5aa9d;
+            font-family: Consolas, monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+            margin-top: 34px;
+        }
+
+        .meta-item {
+            padding-left: 12px;
+            border-left: 2px solid #ff7a3d;
+        }
+
+        .meta-label {
+            color: #b5aa9d;
+            font-family: Consolas, monospace;
+            font-size: 10px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        .meta-value {
+            margin-top: 4px;
+            color: #f3ede4;
+            font-family: Consolas, monospace;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 800px) {
+            .hero {
+                padding: 34px 10px 30px;
+            }
+
+            .grid {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .gauge {
+                width: 220px;
+                min-width: 220px;
+            }
+        }
+    </style>
 
     <section class="hero">
-        <div class="hero-grid">
+        <div class="grid">
             <div>
-                <div class="hero-badge">
+                <div class="badge">
                     <span class="dot"></span>
                     Screening-support prototype
                 </div>
@@ -949,72 +1160,66 @@ st.markdown(
                 </p>
             </div>
 
-            <div class="hero-gauge-wrap">
-                <svg viewBox="0 0 300 165"
-                     class="hero-gauge"
-                     xmlns="http://www.w3.org/2000/svg">
-
+            <div class="gauge">
+                <svg viewBox="0 0 300 165" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20,150 A130,130 0 0,1 280,150"
                           fill="none"
-                          stroke="var(--line)"
+                          stroke="#2a2019"
                           stroke-width="3"
                           stroke-linecap="round"/>
 
                     <path d="M20,150 A130,130 0 0,1 261,83"
                           fill="none"
-                          stroke="var(--ember)"
+                          stroke="#ff7a3d"
                           stroke-width="3"
                           stroke-linecap="round"/>
 
-                    <circle cx="261"
-                            cy="83"
-                            r="8"
-                            fill="var(--bg)"
-                            stroke="var(--ember)"
+                    <circle cx="261" cy="83" r="8"
+                            fill="#100c09"
+                            stroke="#ff7a3d"
                             stroke-width="3"/>
 
-                    <text x="150"
-                          y="122"
+                    <text x="150" y="122"
                           text-anchor="middle"
-                          font-family="monospace"
+                          font-family="Consolas, monospace"
                           font-size="36"
-                          font-weight="600"
-                          fill="var(--ink)">
+                          font-weight="700"
+                          fill="#f3ede4">
                         82.6%
                     </text>
                 </svg>
 
-                <div class="hero-gauge-label">
-                    Held-out test accuracy
-                </div>
+                <div class="gauge-label">Held-out test accuracy</div>
             </div>
         </div>
 
-        <div class="hero-meta">
-            <div>
+        <div class="meta">
+            <div class="meta-item">
                 <div class="meta-label">Model</div>
                 <div class="meta-value">Random Forest</div>
             </div>
 
-            <div>
+            <div class="meta-item">
                 <div class="meta-label">Smoker F1-score</div>
                 <div class="meta-value">0.7708</div>
             </div>
 
-            <div>
+            <div class="meta-item">
                 <div class="meta-label">Smoker recall</div>
                 <div class="meta-value">79.70%</div>
             </div>
 
-            <div>
+            <div class="meta-item">
                 <div class="meta-label">Validation</div>
                 <div class="meta-value">5-fold CV</div>
             </div>
         </div>
     </section>
-    """),
-    unsafe_allow_html=True,
+    """,
+    height=560,
+    scrolling=False,
 )
+
 
 st.write("")
 st.write("")
