@@ -1,8 +1,13 @@
 from pathlib import Path
+
 import joblib
 import pandas as pd
 import streamlit as st
 
+
+# =========================================================
+# PAGE SETUP
+# =========================================================
 st.set_page_config(
     page_title="SmokeScreen",
     page_icon="🫁",
@@ -10,298 +15,632 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ---------------------------------------------------------------------------
+
+# =========================================================
 # DESIGN SYSTEM
-# A "lab report" identity: cool paper background, deep teal ink, a serif
-# display face for authority, monospace for numbers (like a printed panel),
-# and a coral/amber/teal traffic-light reserved only for the reference gauges.
-# ---------------------------------------------------------------------------
-st.markdown("""
-<style>
-:root{
---font-serif:Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;
---font-sans:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,ui-sans-serif,system-ui,sans-serif;
---font-mono:'SF Mono','Cascadia Code','Consolas','Liberation Mono',Menlo,monospace;
---bg:#100c09; --bg2:#170f09;
---ink:#f3ede4; --ink-soft:#b3a99c; --ink-dim:#7d7264;
---line:#2a2019; --line-soft:#1f170f; --card:#150f0a; --card2:#1a130c;
---ember:#ff8a4a; --ember-deep:#c9501a; --ember-soft:rgba(255,138,74,.14);
---ok:#5fd68c; --ok-deep:#3f9c63; --ok-soft:rgba(95,214,140,.15);
---coral:#ff4757; --coral-soft:rgba(255,71,87,.15);
---amber:#ffbf4d; --amber-soft:rgba(255,191,77,.15);
-}
-html{color-scheme:dark!important}
-html,body,[class*="css"]{font-family:var(--font-sans)}
-.stApp{
-background:
-radial-gradient(circle at 12% -6%, rgba(255,138,74,.14), transparent 34rem),
-radial-gradient(circle at 100% 0%, rgba(255,71,87,.07), transparent 30rem),
-linear-gradient(180deg,#0b0806 0%, var(--bg) 100%);
-color:var(--ink)!important}
-html,body,[data-testid="stAppViewContainer"],[data-testid="stMain"],section[data-testid="stMain"],
-.main,[data-testid="stHeader"]{background:transparent!important}
-body{background:var(--bg)!important}
-.block-container{max-width:1180px;padding-top:0;padding-bottom:3rem}
-header[data-testid="stHeader"]{background:transparent}
-#MainMenu,footer,[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"]{
-  visibility:hidden!important;display:none!important}
-::selection{background:var(--ember);color:#04120e}
-div[data-testid="stElementContainer"]{margin-bottom:.3rem}
+# =========================================================
+st.markdown(
+    """
+    <style>
+    :root{
+        --font-serif: Georgia, "Iowan Old Style", "Palatino Linotype",
+                      "Book Antiqua", serif;
+        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                     Roboto, Helvetica, Arial, sans-serif;
+        --font-mono: "SF Mono", "Cascadia Code", Consolas,
+                     "Liberation Mono", Menlo, monospace;
 
-/* ---- Hero (compact -- the form should be a scroll away, not a screen away) ---- */
-.hero{position:relative;padding:1.8rem 1rem 1.6rem;margin-bottom:.2rem;border-bottom:1px solid var(--line-soft)}
-.hero-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.35rem .8rem;border-radius:999px;
-background:var(--card2);border:1px solid var(--line);
-font-family:var(--font-sans);font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)!important}
-.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--ember);box-shadow:0 0 0 3px rgba(255,138,74,.25)}
-.hero h1{max-width:820px;margin:.9rem 0 0;font-family:var(--font-serif);font-weight:700;
-font-size:clamp(1.7rem,3vw,2.5rem);line-height:1.15;letter-spacing:-.01em;color:var(--ink)!important}
-.hero p{max-width:680px;margin:.7rem 0 0;line-height:1.65;font-size:.98rem;color:var(--ink-soft)!important}
-.hero-stats{display:flex;gap:1.6rem;margin-top:1.3rem;flex-wrap:wrap}
-.hero-stats div{border-left:2px solid var(--line);padding-left:.65rem}
-.hero-stats .hs-label{font-family:var(--font-sans);font-size:.72rem;letter-spacing:.02em;color:var(--ink-soft)!important}
-.hero-stats .hs-value{font-family:var(--font-mono);font-size:1rem;font-weight:600;color:var(--ink)!important;margin-top:.1rem}
-.hero-note{max-width:760px;margin-top:.9rem;font-size:.82rem;line-height:1.55;color:var(--ink-dim)!important}
+        --bg:#100c09;
+        --bg-deep:#0b0806;
+        --bg-soft:#170f09;
+        --card:#150f0a;
+        --card-2:#1a130c;
+        --ink:#f3ede4;
+        --ink-soft:#b5aa9d;
+        --ink-dim:#7d7264;
+        --line:#2a2019;
+        --line-soft:#1f170f;
 
-/* ---- Stat / info cards ---- */
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1.15rem 1.3rem;min-height:120px}
-.label{font-family:var(--font-sans);font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft)!important}
-.value{font-family:var(--font-mono);font-size:1.7rem;font-weight:600;letter-spacing:-.01em;color:var(--ink)!important;margin-top:.3rem}
-.note{font-size:.82rem;line-height:1.45;color:var(--ink-soft)!important;margin-top:.3rem}
+        --ember:#ff7a3d;
+        --ember-deep:#c9501a;
+        --ember-soft:rgba(255,122,61,.14);
+        --green:#67d695;
+        --green-soft:rgba(103,214,149,.14);
+        --red:#ff5967;
+        --red-soft:rgba(255,89,103,.14);
+        --amber:#ffbf4d;
+        --amber-soft:rgba(255,191,77,.14);
+    }
 
-.kicker{font-family:var(--font-sans);font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft)!important}
-.title{font-family:var(--font-serif);font-size:1.28rem;font-weight:600;color:var(--ink)!important;margin:.3rem 0}
-.copy{font-size:.92rem;line-height:1.62;color:var(--ink-soft)!important}
+    html{color-scheme:dark!important}
 
-/* ---- Ranked priority chips ---- */
-.pills{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.85rem}
-.pill{display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .72rem .4rem .5rem;border-radius:999px;
-background:var(--card2);border:1px solid var(--line);color:var(--ink)!important;font-size:.8rem;font-weight:600}
-.pill b{display:inline-flex;align-items:center;justify-content:center;width:1.15rem;height:1.15rem;border-radius:50%;
-background:var(--ink-dim);color:var(--bg)!important;font-family:var(--font-mono);font-size:.66rem}
+    html,body,[class*="css"]{
+        font-family:var(--font-sans);
+    }
 
-/* ---- Bordered containers (st.container(border=True)) act as our form cards ---- */
-div[data-testid="stVerticalBlockBorderWrapper"]{background:var(--card);border:1px solid var(--line)!important;
-border-radius:22px!important;padding:.3rem}
-div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stVerticalBlock"]{gap:.6rem}
+    .stApp{
+        background:
+            radial-gradient(circle at 12% -6%,
+                rgba(255,122,61,.14), transparent 34rem),
+            radial-gradient(circle at 100% 0%,
+                rgba(255,89,103,.07), transparent 30rem),
+            linear-gradient(180deg,var(--bg-deep) 0%,var(--bg) 100%);
+        color:var(--ink)!important;
+    }
 
-.section-head{display:flex;align-items:baseline;gap:.55rem;margin:.4rem 0 1rem}
-.section-head .n{font-family:var(--font-sans);font-size:.78rem;font-weight:700;color:var(--ink-dim)!important}
-.section-head .t{font-family:var(--font-serif);font-size:1.05rem;font-weight:600;color:var(--ink)!important}
-.section-head .r{flex:1;height:1px;background:var(--line)}
+    html,body,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    section[data-testid="stMain"],
+    .main,
+    [data-testid="stHeader"]{
+        background:transparent!important;
+    }
 
-.stMarkdown h1,.stMarkdown h2,.stMarkdown h3,.stMarkdown h4{color:var(--ink)!important;font-family:var(--font-serif);letter-spacing:-.01em}
-.stMarkdown h1 a,.stMarkdown h2 a,.stMarkdown h3 a,.stMarkdown h4 a{display:none!important}
-.stMarkdown p,.stCaption,label,div[data-testid="stWidgetLabel"] p{color:var(--ink)!important}
-.stCaption{color:var(--ink-soft)!important}
-.field-note{margin-top:-.3rem;margin-bottom:.9rem;padding:.5rem .65rem;border:1px solid var(--line);border-radius:10px;
-background:var(--card2);color:var(--ink-soft)!important;font-size:.76rem;line-height:1.4}
-.info-box{padding:.85rem 1rem;border-radius:14px;background:var(--card2);border:1px solid var(--line);
-color:var(--ink-soft)!important;font-size:.86rem;line-height:1.55;margin-bottom:1rem}
-.warn-box{padding:.85rem 1rem;border-radius:14px;background:var(--amber-soft);border:1px solid rgba(255,191,77,.35);
-color:var(--amber)!important;font-size:.9rem;line-height:1.55}
+    body{background:var(--bg)!important}
 
-div[data-testid="stTabs"] button{color:var(--ink-dim)!important;font-weight:600!important}
-div[data-testid="stTabs"] button[aria-selected="true"]{color:var(--ember)!important}
-div[data-testid="stTabs"] div[data-baseweb="tab-highlight"]{background-color:var(--ember)!important}
-div[data-testid="stTabs"] div[data-baseweb="tab-border"]{background-color:var(--line)!important}
-div[data-baseweb="input"],div[data-baseweb="input"]>div,div[data-baseweb="base-input"],div[data-baseweb="base-input"]>div,
-div[data-baseweb="select"]>div{background:var(--card2)!important;border-color:var(--line)!important;color:var(--ink)!important;border-radius:10px!important}
-input,div[data-baseweb="input"] input,div[data-baseweb="base-input"] input{
-color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important;opacity:1!important;font-family:var(--font-mono)!important}
-div[data-baseweb="select"] span,div[data-baseweb="select"] div,div[role="option"]{color:var(--ink)!important}
-div[role="listbox"]{background:var(--card2)!important;border:1px solid var(--line)!important}
-div[role="radiogroup"] label,div[role="radiogroup"] label p{color:var(--ink)!important}
-button[title="Increment"],button[title="Decrement"]{background:var(--card2)!important;border-color:var(--line)!important}
-button[title="Increment"] svg,button[title="Decrement"] svg{fill:var(--ink)!important}
+    .block-container{
+        max-width:1240px;
+        padding-top:0;
+        padding-bottom:3rem;
+    }
 
-/* ---- Mode selector as pill tabs ---- */
-div[data-testid="stRadio"] div[role="radiogroup"]{gap:.5rem}
-div[data-testid="stRadio"] label{background:var(--card);border:1px solid var(--line);border-radius:999px;
-padding:.5rem 1.1rem!important;margin:0!important}
-div[data-testid="stRadio"] label:has(input:checked){background:var(--ember-soft);border-color:rgba(255,138,74,.4)}
+    header[data-testid="stHeader"]{background:transparent}
 
-.stButton>button,.stFormSubmitButton>button{width:100%;min-height:3rem;border:none;border-radius:14px;
-font-size:.95rem;font-weight:700}
-button[kind="primary"],.stFormSubmitButton>button{
-  background:linear-gradient(90deg,var(--ember-deep),var(--ember))!important;
-  color:#04120e!important;box-shadow:0 13px 30px rgba(255,138,74,.18)!important}
-button[kind="primary"] p,.stFormSubmitButton>button p{color:#04120e!important}
-button[kind="secondary"]{background:var(--card2)!important;border:1px solid var(--line)!important;color:var(--ink)!important}
-button[kind="secondary"] p{color:var(--ink)!important}
-button:focus-visible,input:focus-visible,[role="slider"]:focus-visible,
-div[data-baseweb="select"]:focus-within{outline:2px solid var(--ember)!important;outline-offset:2px!important}
+    #MainMenu,
+    footer,
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"]{
+        visibility:hidden!important;
+        display:none!important;
+    }
 
-.result{min-height:185px;padding:1.5rem 1.6rem;border:1px solid;border-radius:22px}
-.result h3{color:var(--ink)!important;font-family:var(--font-serif);margin:.25rem 0 .5rem}
-.result p{color:var(--ink-soft)!important;line-height:1.62}
-.smoker{background:var(--coral-soft);border-color:rgba(255,71,87,.35)}
-.nonsmoker{background:var(--ok-soft);border-color:rgba(95,214,140,.35)}
-.confidence{min-height:185px;padding:1.4rem 1.5rem;border:1px solid var(--line);border-radius:22px;background:var(--card)}
-.confidence-value{font-family:var(--font-mono);font-size:2.5rem;font-weight:600;letter-spacing:-.02em;color:var(--ink)!important}
-.foot{font-size:.84rem;line-height:1.6;color:var(--ink-dim)!important}
+    ::selection{
+        background:var(--ember);
+        color:#160803;
+    }
 
-/* ---- Reference-range gauge (the signature element) ---- */
-.gauge-wrap{margin:-.15rem 0 .2rem}
-.gauge-field-label{font-family:var(--font-sans);font-size:.9rem;font-weight:600;color:var(--ink)!important;
-margin-bottom:.35rem;min-height:2.4rem;line-height:1.2;display:flex;align-items:flex-end}
-.gauge-val{font-family:var(--font-mono);font-size:.86rem;font-weight:600;color:var(--ink)!important}
-.gauge-tag{font-family:var(--font-mono);font-size:.66rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
-padding:.1rem .5rem;border-radius:999px;white-space:nowrap}
-.tag-normal{background:var(--ok-soft);color:var(--ok)!important}
-.tag-low{background:var(--amber-soft);color:var(--amber)!important}
-.tag-high{background:var(--coral-soft);color:var(--coral)!important}
-.gauge-scale{display:flex;justify-content:space-between;align-items:center;margin-top:.25rem;margin-bottom:.9rem}
-.gauge-scale span:first-child,.gauge-scale span:last-child{font-family:var(--font-mono);font-size:.68rem;color:var(--ink-soft)!important}
+    /* ---------- ticker ---------- */
+    .ticker{
+        overflow:hidden;
+        border-top:1px solid var(--line-soft);
+        border-bottom:1px solid var(--line-soft);
+        background:var(--bg-soft);
+        padding:.55rem 0;
+        white-space:nowrap;
+    }
 
-/* ---- Native slider taken over as the interactive gauge ----
-   BaseWeb nests a track + a separately-colored "filled" bar + the thumb
-   inside div[data-baseweb="slider"]. Trying to target one specific nested
-   child by position was fragile and produced a visible seam between the
-   painted track and BaseWeb's own default-colored fill. Instead: flatten
-   every descendant's background to transparent, then paint the track
-   color on the stable outer container itself, and re-center the thumb
-   with top/transform rather than a guessed offset. */
-div[data-testid="stSlider"]{padding-top:.3rem!important;padding-bottom:0!important}
-div[data-testid*="TickBar" i]{display:none!important}
-div[data-baseweb="slider"]{
-  padding:0!important;margin:.5rem 0!important;height:8px!important;
-  border-radius:999px!important;background:var(--line)!important;
-  box-shadow:inset 0 1px 3px rgba(0,0,0,.35)!important;position:relative!important}
-div[data-baseweb="slider"] div{background:transparent!important;box-shadow:none!important;border:none!important}
-div[data-baseweb="slider"] [role="slider"] div{display:none!important}
-div[data-baseweb="slider"] [role="slider"]{
-  background:var(--ink)!important;border:3px solid var(--bg)!important;
-  box-shadow:0 0 0 2.5px var(--ember), 0 2px 8px rgba(0,0,0,.4)!important;
-  width:19px!important;height:19px!important;
-  top:50%!important;transform:translateY(-50%)!important;cursor:grab!important;
-  transition:transform .12s ease, box-shadow .12s ease!important}
-div[data-baseweb="slider"] [role="slider"]:hover{
-  transform:translateY(-50%) scale(1.15)!important;
-  box-shadow:0 0 0 5px var(--ember-soft),0 2px 10px rgba(0,0,0,.45)!important}
-div[data-baseweb="slider"] [role="slider"]:active{
-  cursor:grabbing!important;transform:translateY(-50%) scale(1.2)!important}
-div[data-testid="stNumberInput"] input{font-family:var(--font-mono)!important;font-size:.85rem!important;
-padding:.4rem .5rem!important;text-align:center!important}
+    .ticker-track{
+        display:inline-flex;
+        animation:ticker-scroll 28s linear infinite;
+    }
 
-/* ---- Field spacing (keeps grouped rows of same-type fields aligned) ---- */
-.plain-field{margin-bottom:.85rem}
+    .ticker-track span{
+        padding:0 1.35rem;
+        font-family:var(--font-mono);
+        font-size:.7rem;
+        font-weight:600;
+        letter-spacing:.13em;
+        text-transform:uppercase;
+        color:var(--ink-dim)!important;
+    }
 
-@media(max-width:760px){.hero{padding:1.5rem 1rem 1.3rem}.hero-stats{gap:1.1rem}
-.block-container{padding-left:.8rem;padding-right:.8rem}}
-</style>
-""", unsafe_allow_html=True)
+    .ticker-track span.accent{color:var(--ember)!important}
 
+    @keyframes ticker-scroll{
+        from{transform:translateX(0)}
+        to{transform:translateX(-50%)}
+    }
+
+    /* ---------- hero ---------- */
+    .hero{
+        position:relative;
+        overflow:hidden;
+        padding:4.2rem 1rem 3.5rem;
+        border-bottom:1px solid var(--line-soft);
+    }
+
+    .hero-grid{
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-end;
+        gap:2rem;
+        position:relative;
+        z-index:2;
+    }
+
+    .hero-badge{
+        display:inline-flex;
+        align-items:center;
+        gap:.5rem;
+        padding:.42rem .85rem;
+        border-radius:999px;
+        background:var(--ember-soft);
+        border:1px solid rgba(255,122,61,.35);
+        font-family:var(--font-mono);
+        font-size:.7rem;
+        font-weight:600;
+        letter-spacing:.12em;
+        text-transform:uppercase;
+        color:var(--ember)!important;
+    }
+
+    .hero-badge .dot{
+        width:6px;
+        height:6px;
+        border-radius:50%;
+        background:var(--ember);
+        box-shadow:0 0 0 3px rgba(255,122,61,.25);
+    }
+
+    .hero h1{
+        max-width:760px;
+        margin:1.3rem 0 0;
+        font-family:var(--font-serif);
+        font-weight:600;
+        font-size:clamp(2.75rem,5.6vw,5rem);
+        line-height:.98;
+        letter-spacing:-.035em;
+        color:var(--ink)!important;
+    }
+
+    .hero h1 em{
+        font-style:italic;
+        font-weight:500;
+        color:var(--ember)!important;
+    }
+
+    .hero p{
+        max-width:560px;
+        margin:1.4rem 0 0;
+        line-height:1.72;
+        font-size:1.02rem;
+        color:var(--ink-soft)!important;
+    }
+
+    .hero-gauge-wrap{text-align:center}
+
+    .hero-gauge{
+        width:100%;
+        max-width:300px;
+        height:auto;
+    }
+
+    .hero-gauge-label{
+        display:block;
+        margin-top:-.2rem;
+        text-align:center;
+        font-family:var(--font-mono);
+        font-size:.72rem;
+        font-weight:600;
+        letter-spacing:.1em;
+        text-transform:uppercase;
+        color:var(--ink-soft)!important;
+    }
+
+    .hero-meta{
+        display:flex;
+        gap:1.8rem;
+        margin-top:2.3rem;
+        flex-wrap:wrap;
+    }
+
+    .hero-meta div{
+        border-left:2px solid var(--ember);
+        padding-left:.7rem;
+    }
+
+    .hero-meta .meta-label{
+        font-family:var(--font-mono);
+        font-size:.65rem;
+        letter-spacing:.1em;
+        text-transform:uppercase;
+        color:var(--ink-soft)!important;
+    }
+
+    .hero-meta .meta-value{
+        margin-top:.15rem;
+        font-family:var(--font-mono);
+        font-size:1.05rem;
+        font-weight:600;
+        color:var(--ink)!important;
+    }
+
+    /* ---------- reusable cards ---------- */
+    .card{
+        background:var(--card);
+        border:1px solid var(--line);
+        border-radius:18px;
+        padding:1.2rem 1.35rem;
+        min-height:125px;
+    }
+
+    .kicker{
+        font-family:var(--font-mono);
+        font-size:.7rem;
+        font-weight:600;
+        letter-spacing:.09em;
+        text-transform:uppercase;
+        color:var(--ember)!important;
+    }
+
+    .title{
+        margin:.35rem 0;
+        font-family:var(--font-serif);
+        font-size:1.3rem;
+        font-weight:600;
+        color:var(--ink)!important;
+    }
+
+    .copy{
+        font-size:.92rem;
+        line-height:1.64;
+        color:var(--ink-soft)!important;
+    }
+
+    .pills{
+        display:flex;
+        gap:.5rem;
+        flex-wrap:wrap;
+        margin-top:.85rem;
+    }
+
+    .pill{
+        display:inline-flex;
+        align-items:center;
+        gap:.4rem;
+        padding:.4rem .72rem .4rem .5rem;
+        border-radius:999px;
+        background:var(--ember-soft);
+        border:1px solid rgba(255,122,61,.3);
+        color:var(--ember)!important;
+        font-size:.8rem;
+        font-weight:600;
+    }
+
+    .pill b{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        width:1.15rem;
+        height:1.15rem;
+        border-radius:50%;
+        background:var(--ember);
+        color:#160803!important;
+        font-family:var(--font-mono);
+        font-size:.66rem;
+    }
+
+    /* ---------- mode selector ---------- */
+    div[data-testid="stRadio"] div[role="radiogroup"]{
+        gap:.55rem;
+    }
+
+    div[data-testid="stRadio"] label{
+        background:var(--card);
+        border:1px solid var(--line);
+        border-radius:999px;
+        padding:.55rem 1.1rem!important;
+        margin:0!important;
+    }
+
+    div[data-testid="stRadio"] label:has(input:checked){
+        background:var(--ember-soft);
+        border-color:rgba(255,122,61,.45);
+    }
+
+    div[role="radiogroup"] label,
+    div[role="radiogroup"] label p{
+        color:var(--ink)!important;
+    }
+
+    /* ---------- form shell ---------- */
+    div[data-testid="stVerticalBlockBorderWrapper"]{
+        background:var(--card);
+        border:1px solid var(--line)!important;
+        border-radius:22px!important;
+        padding:.35rem;
+    }
+
+    div[data-testid="stVerticalBlockBorderWrapper"]
+    div[data-testid="stVerticalBlock"]{
+        gap:.65rem;
+    }
+
+    .section-head{
+        display:flex;
+        align-items:baseline;
+        gap:.55rem;
+        margin:.45rem 0 1rem;
+    }
+
+    .section-head .n{
+        font-family:var(--font-mono);
+        font-size:.75rem;
+        font-weight:600;
+        color:var(--ember)!important;
+    }
+
+    .section-head .t{
+        font-family:var(--font-serif);
+        font-size:1.08rem;
+        font-weight:600;
+        color:var(--ink)!important;
+    }
+
+    .section-head .r{
+        flex:1;
+        height:1px;
+        background:var(--line);
+    }
+
+    .stMarkdown h1,
+    .stMarkdown h2,
+    .stMarkdown h3,
+    .stMarkdown h4{
+        color:var(--ink)!important;
+        font-family:var(--font-serif);
+        letter-spacing:-.01em;
+    }
+
+    .stMarkdown p,
+    .stCaption,
+    label,
+    div[data-testid="stWidgetLabel"] p{
+        color:var(--ink)!important;
+    }
+
+    .stCaption{color:var(--ink-soft)!important}
+
+    .field-note{
+        margin-top:-.3rem;
+        margin-bottom:.9rem;
+        padding:.5rem .65rem;
+        border:1px solid var(--line);
+        border-radius:10px;
+        background:var(--card-2);
+        color:var(--ink-soft)!important;
+        font-size:.76rem;
+        line-height:1.42;
+    }
+
+    .info-box{
+        padding:.85rem 1rem;
+        border-radius:14px;
+        background:var(--ember-soft);
+        border:1px solid rgba(255,122,61,.3);
+        color:var(--ember)!important;
+        font-size:.88rem;
+        line-height:1.55;
+        margin-bottom:1rem;
+    }
+
+    .warn-box{
+        padding:.85rem 1rem;
+        border-radius:14px;
+        background:var(--amber-soft);
+        border:1px solid rgba(255,191,77,.35);
+        color:var(--amber)!important;
+        font-size:.88rem;
+        line-height:1.55;
+    }
+
+    div[data-testid="stTabs"] button{
+        color:var(--ink-dim)!important;
+        font-weight:600!important;
+    }
+
+    div[data-testid="stTabs"] button[aria-selected="true"]{
+        color:var(--ember)!important;
+    }
+
+    div[data-testid="stTabs"] div[data-baseweb="tab-highlight"]{
+        background-color:var(--ember)!important;
+    }
+
+    div[data-testid="stTabs"] div[data-baseweb="tab-border"]{
+        background-color:var(--line)!important;
+    }
+
+    div[data-baseweb="input"],
+    div[data-baseweb="input"]>div,
+    div[data-baseweb="base-input"],
+    div[data-baseweb="base-input"]>div,
+    div[data-baseweb="select"]>div{
+        background:var(--card-2)!important;
+        border-color:var(--line)!important;
+        color:var(--ink)!important;
+        border-radius:10px!important;
+    }
+
+    input,
+    div[data-baseweb="input"] input,
+    div[data-baseweb="base-input"] input{
+        color:var(--ink)!important;
+        -webkit-text-fill-color:var(--ink)!important;
+        opacity:1!important;
+        font-family:var(--font-mono)!important;
+    }
+
+    div[data-baseweb="select"] span,
+    div[data-baseweb="select"] div,
+    div[role="option"]{
+        color:var(--ink)!important;
+    }
+
+    div[role="listbox"]{
+        background:var(--card-2)!important;
+        border:1px solid var(--line)!important;
+    }
+
+    button[title="Increment"],
+    button[title="Decrement"]{
+        background:var(--card-2)!important;
+        border-color:var(--line)!important;
+    }
+
+    button[title="Increment"] svg,
+    button[title="Decrement"] svg{
+        fill:var(--ink)!important;
+    }
+
+    .stButton>button{
+        width:100%;
+        min-height:3.1rem;
+        border:none;
+        border-radius:14px;
+        background:linear-gradient(90deg,var(--ember-deep),var(--ember));
+        color:#160803!important;
+        font-size:.96rem;
+        font-weight:700;
+        box-shadow:0 13px 30px rgba(255,122,61,.18);
+    }
+
+    .stButton>button p{color:#160803!important}
+
+    /* ---------- right prediction panel ---------- */
+    .result-sticky{
+        position:sticky;
+        top:1rem;
+    }
+
+    .result-placeholder{
+        min-height:300px;
+        padding:1.5rem;
+        border:1px dashed #3b2a1f;
+        border-radius:22px;
+        background:rgba(21,15,10,.82);
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+    }
+
+    .result-placeholder h3{
+        margin:.3rem 0 .5rem;
+        font-family:var(--font-serif);
+        color:var(--ink)!important;
+    }
+
+    .result-placeholder p{
+        margin:0;
+        line-height:1.62;
+        color:var(--ink-soft)!important;
+    }
+
+    .result-card{
+        min-height:300px;
+        padding:1.55rem;
+        border:1px solid;
+        border-radius:22px;
+    }
+
+    .result-card h3{
+        margin:.3rem 0 .5rem;
+        font-family:var(--font-serif);
+        color:var(--ink)!important;
+    }
+
+    .result-card p{
+        line-height:1.62;
+        color:var(--ink-soft)!important;
+    }
+
+    .result-smoker{
+        background:var(--red-soft);
+        border-color:rgba(255,89,103,.38);
+    }
+
+    .result-nonsmoker{
+        background:var(--green-soft);
+        border-color:rgba(103,214,149,.38);
+    }
+
+    .result-score{
+        margin-top:1.15rem;
+        font-family:var(--font-mono);
+        font-size:2.85rem;
+        font-weight:600;
+        color:var(--ink)!important;
+    }
+
+    .result-caption{
+        font-family:var(--font-mono);
+        font-size:.69rem;
+        letter-spacing:.08em;
+        text-transform:uppercase;
+        color:var(--ink-soft)!important;
+    }
+
+    .foot{
+        font-size:.84rem;
+        line-height:1.6;
+        color:var(--ink-dim)!important;
+    }
+
+    @media(max-width:900px){
+        .hero-grid{
+            flex-direction:column;
+            align-items:flex-start;
+        }
+
+        .hero-gauge-wrap{text-align:left}
+        .hero-gauge{max-width:220px}
+        .result-sticky{position:static}
+    }
+
+    @media(max-width:760px){
+        .hero{padding:2.7rem 1rem 2.3rem}
+
+        .block-container{
+            padding-left:.8rem;
+            padding-right:.8rem;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# =========================================================
+# MODEL FILES
+# =========================================================
 APP_FOLDER = Path(__file__).resolve().parent
 MODEL_PATH = APP_FOLDER / "smoking_random_forest_model.pkl"
 FEATURE_PATH = APP_FOLDER / "smoking_feature_columns.pkl"
 
-# TODO: fill these in from the training notebook/run so the deployed app can
-# always be traced back to the exact model artifact and preprocessing it used
-# (review item: "add model version information and the date the model was
-# trained"). Left as an honest placeholder rather than a guessed value.
-MODEL_VERSION = "unspecified -- set from training run"
-MODEL_TRAINED_ON = "unspecified -- set from training run"
-
 REFERENCE_DEFAULTS = {
-    "age": 40, "height(cm)": 165, "weight(kg)": 65, "waist(cm)": 82.0,
-    "eyesight(left)": 1.0, "eyesight(right)": 1.0,
-    "hearing(left)": 1.0, "hearing(right)": 1.0,
-    "systolic": 120.0, "relaxation": 76.0,
-    "fasting blood sugar": 96.0, "Cholesterol": 195.0,
-    "HDL": 55.0, "LDL": 113.0, "Urine protein": 1.0,
-    "serum creatinine": 0.9, "AST": 23.0, "ALT": 21.0,
-    "dental caries": 0, "tartar": "N",
+    "age": 40,
+    "height(cm)": 165,
+    "weight(kg)": 65,
+    "waist(cm)": 82.0,
+    "eyesight(left)": 1.0,
+    "eyesight(right)": 1.0,
+    "hearing(left)": 1.0,
+    "hearing(right)": 1.0,
+    "systolic": 120.0,
+    "relaxation": 76.0,
+    "fasting blood sugar": 96.0,
+    "Cholesterol": 195.0,
+    "HDL": 55.0,
+    "LDL": 113.0,
+    "Urine protein": 1.0,
+    "serum creatinine": 0.9,
+    "AST": 23.0,
+    "ALT": 21.0,
+    "dental caries": 0,
+    "tartar": "N",
 }
 
-# Ordered by Random Forest feature-importance rank (highest signal first).
-PRIORITY_ORDER = ["gender", "Gtp", "hemoglobin", "triglyceride", "height(cm)"]
-PRIORITY_FEATURES = set(PRIORITY_ORDER)
-
-# General adult reference bands used purely to help someone read a raw lab
-# number at a glance. These are widely-published population reference
-# ranges, not a diagnosis -- always shown with that caveat in the UI.
-# Format: low, high, unit, reverse (True = below `low` is the flagged zone,
-# and there is no penalised upper zone -- e.g. HDL, where higher is better).
-LAB_RANGES = {
-    "waist(cm)":           (70.0, 94.0, "cm", False),
-    "systolic":            (90.0, 129.0, "mmHg", False),
-    "relaxation":          (60.0, 84.0, "mmHg", False),
-    "fasting blood sugar": (70.0, 99.0, "mg/dL", False),
-    "Cholesterol":         (100.0, 199.0, "mg/dL", False),
-    "HDL":                 (40.0, 200.0, "mg/dL", True),
-    "LDL":                 (0.0, 129.0, "mg/dL", False),
-    "triglyceride":        (0.0, 149.0, "mg/dL", False),
-    "hemoglobin":          (12.0, 17.5, "g/dL", False),
-    "serum creatinine":    (0.6, 1.3, "mg/dL", False),
-    "AST":                 (8.0, 40.0, "U/L", False),
-    "ALT":                 (7.0, 56.0, "U/L", False),
-    "Gtp":                 (8.0, 61.0, "U/L", False),
+PRIORITY_FEATURES = {
+    "gender",
+    "Gtp",
+    "hemoglobin",
+    "triglyceride",
+    "height(cm)",
 }
 
-# UI metadata for every interactive_gauge() field, kept in one place so call
-# sites just say interactive_gauge("Gtp", key="...") instead of repeating
-# labels/notes/bounds inline at every call site.
-# Format: label, note, default, step, num_min, num_max (num_min/num_max are
-# the hard limits on the paired number box; the slider's own range is
-# derived from LAB_RANGES inside interactive_gauge()).
-GAUGE_FIELDS = {
-    "Gtp": dict(
-        label="Gamma-glutamyl transferase (Gtp) · #2 priority",
-        note="High-priority liver-enzyme measurement.",
-        default=25.0, step=1.0, num_min=1.0, num_max=999.0,
-    ),
-    "hemoglobin": dict(
-        label="Haemoglobin (hemoglobin) · #3 priority",
-        note="High-priority oxygen-carrying blood measurement.",
-        default=14.8, step=0.1, num_min=4.9, num_max=21.1,
-    ),
-    "triglyceride": dict(
-        label="Triglycerides (triglyceride) · #4 priority",
-        note="High-priority blood-fat measurement.",
-        default=108.0, step=1.0, num_min=8.0, num_max=999.0,
-    ),
-    "waist(cm)": dict(
-        label="Waist circumference (waist(cm))", note="",
-        default=82.0, step=0.5, num_min=51.0, num_max=129.0,
-    ),
-    "systolic": dict(
-        label="Systolic pressure (systolic)", note="",
-        default=120.0, step=1.0, num_min=71.0, num_max=240.0,
-    ),
-    "relaxation": dict(
-        label="Diastolic pressure (relaxation)", note="",
-        default=76.0, step=1.0, num_min=40.0, num_max=146.0,
-    ),
-    "fasting blood sugar": dict(
-        label="Fasting blood glucose (fasting blood sugar)", note="",
-        default=96.0, step=1.0, num_min=46.0, num_max=505.0,
-    ),
-    "Cholesterol": dict(
-        label="Total cholesterol (Cholesterol)", note="",
-        default=195.0, step=1.0, num_min=55.0, num_max=445.0,
-    ),
-    "HDL": dict(
-        label="HDL (HDL)", note="",
-        default=55.0, step=1.0, num_min=4.0, num_max=618.0,
-    ),
-    "LDL": dict(
-        label="LDL (LDL)", note="",
-        default=113.0, step=1.0, num_min=1.0, num_max=1860.0,
-    ),
-    "serum creatinine": dict(
-        label="Serum creatinine (serum creatinine)", note="",
-        default=0.9, step=0.1, num_min=0.1, num_max=11.6,
-    ),
-    "AST": dict(
-        label="AST (AST)", note="",
-        default=23.0, step=1.0, num_min=6.0, num_max=1311.0,
-    ),
-    "ALT": dict(
-        label="ALT (ALT)", note="",
-        default=21.0, step=1.0, num_min=1.0, num_max=2914.0,
-    ),
-}
 
 @st.cache_resource
 def load_files():
@@ -310,541 +649,936 @@ def load_files():
             "Place smoking_random_forest_model.pkl and "
             "smoking_feature_columns.pkl beside this app."
         )
-    model = joblib.load(MODEL_PATH)
-    columns = joblib.load(FEATURE_PATH)
-    return model, columns
+
+    loaded_model = joblib.load(MODEL_PATH)
+    loaded_columns = joblib.load(FEATURE_PATH)
+
+    expected_n = getattr(loaded_model, "n_features_in_", None)
+
+    if expected_n is not None and expected_n != len(loaded_columns):
+        raise ValueError(
+            "The model and feature-column file do not match."
+        )
+
+    return loaded_model, loaded_columns
+
 
 try:
     model, feature_columns = load_files()
-    expected_n = getattr(model, "n_features_in_", None)
-    if expected_n is not None and expected_n != len(feature_columns):
-        st.error(
-            "The loaded model and feature-columns file don't match "
-            f"(model expects {expected_n} features, columns file has {len(feature_columns)}). "
-            "Confirm smoking_random_forest_model.pkl and smoking_feature_columns.pkl come from "
-            "the same training run before using this app."
-        )
-        st.stop()
 except Exception as exc:
     st.error("The prediction system could not be loaded.")
     st.code(str(exc))
     st.stop()
 
-def desc(text):
-    st.markdown(f'<div class="field-note">{text}</div>', unsafe_allow_html=True)
 
-def gauge_section_header(step_no):
-    """Section header for a group of interactive_gauge() fields, plus the
-    disclaimer the review flagged as required: these bands are general adult
-    population ranges (not derived from this dataset), shown for context
-    only, not adjusted for sex/age/lab methodology, and never diagnostic."""
-    st.markdown(f"""
-    <div class="section-head"><span class="n">{step_no}</span><span class="t">Reference-gauge fields</span><div class="r"></div></div>
-    <div class="field-note" style="margin-top:-.4rem">General adult population reference bands
-    in the units shown, not values derived from this dataset -- context only, not adjusted for
-    sex, age or lab methodology, and not diagnostic.</div>
-    """, unsafe_allow_html=True)
+# =========================================================
+# HELPERS
+# =========================================================
+def desc(text: str) -> None:
+    st.markdown(
+        f'<div class="field-note">{text}</div>',
+        unsafe_allow_html=True,
+    )
 
-def _sync_from_slider(key):
-    st.session_state[f"{key}__num"] = st.session_state[f"{key}__sld"]
 
-def _sync_from_number(key):
-    lo, hi = st.session_state[f"{key}__bounds"]
-    st.session_state[f"{key}__sld"] = max(lo, min(hi, st.session_state[f"{key}__num"]))
+def binary(answer: str) -> int:
+    return 1 if answer == "Yes" else 0
 
-def interactive_gauge(feature_key, key):
-    """Draggable, colour-zoned reference gauge for one lab field. Doubles as
-    the value input -- slide the thumb or type the exact number in the box
-    beside it; the two stay in sync via session_state.
 
-    feature_key : key into LAB_RANGES / GAUGE_FIELDS (e.g. "Gtp")
-    key         : unique widget key for this occurrence of the field
-                  (the same feature_key can appear in both Quick and Full
-                  assessment, so each needs its own session_state slot)
-    """
-    low, high, unit, reverse = LAB_RANGES[feature_key]
-    field = GAUGE_FIELDS[feature_key]
-    label, note = field["label"], field["note"]
-    default, step = field["default"], field["step"]
-    num_min, num_max = field["num_min"], field["num_max"]
-
-    span = max(high - low, 1e-6)
-    lo_bound = round(max(low - span * 0.7, num_min), 4)
-    hi_bound = round(min(high + span * 0.7, num_max), 4)
-    if hi_bound <= lo_bound:
-        lo_bound, hi_bound = num_min, num_max
-
-    sld_key, num_key, bnd_key = f"{key}__sld", f"{key}__num", f"{key}__bounds"
-    st.session_state[bnd_key] = (lo_bound, hi_bound)
-    if sld_key not in st.session_state:
-        clamped = max(lo_bound, min(hi_bound, default))
-        st.session_state[sld_key] = clamped
-        st.session_state[num_key] = default
-
-    def pct(v):
-        return max(0.0, min(100.0, (v - lo_bound) / (hi_bound - lo_bound) * 100))
-
-    low_pct, high_pct = pct(low), pct(high)
-    if reverse:
-        grad = (f"linear-gradient(to right, var(--amber) 0%, var(--amber) {low_pct:.1f}%, "
-                f"var(--ok) {low_pct:.1f}%, var(--ok) 100%)")
-    else:
-        grad = (f"linear-gradient(to right, var(--amber) 0%, var(--amber) {low_pct:.1f}%, "
-                f"var(--ok) {low_pct:.1f}%, var(--ok) {high_pct:.1f}%, "
-                f"var(--coral) {high_pct:.1f}%, var(--coral) 100%)")
-
-    with st.container(key=f"gauge_{key}"):
-        st.markdown(f"""
-        <div class="gauge-field-label">{label} <span style="color:var(--ink-soft);font-weight:400">— {unit}</span></div>
-        <style>
-        div.st-key-gauge_{key} div[data-baseweb="slider"] {{
-            background: {grad} !important;
-        }}
-        </style>
-        """, unsafe_allow_html=True)
-
-        col_s, col_n = st.columns([3.3, 1])
-        with col_s:
-            st.slider("", lo_bound, hi_bound, step=step, key=sld_key,
-                       on_change=_sync_from_slider, args=(key,), label_visibility="collapsed")
-        with col_n:
-            st.number_input("", num_min, num_max, step=step, key=num_key,
-                             on_change=_sync_from_number, args=(key,), label_visibility="collapsed")
-
-        value = st.session_state[num_key]
-        if reverse:
-            tag_label, tag_class = ("Low", "tag-low") if value < low else ("Normal", "tag-normal")
-        else:
-            if value < low:
-                tag_label, tag_class = "Low", "tag-low"
-            elif value > high:
-                tag_label, tag_class = "High", "tag-high"
-            else:
-                tag_label, tag_class = "Normal", "tag-normal"
-
-        st.markdown(f"""
-        <div class="gauge-scale">
-          <span>{lo_bound:g} {unit}</span>
-          <span class="gauge-tag {tag_class}">{tag_label} · ref {low:g}–{high:g}</span>
-          <span>{hi_bound:g} {unit}</span>
-        </div>
-        """, unsafe_allow_html=True)
-        if note:
-            desc(note)
-    return value
-
-def encode(values):
+def encode(values: dict) -> pd.DataFrame:
     frame = pd.DataFrame([values])
+
     frame = pd.get_dummies(
         frame,
         columns=["gender", "tartar"],
         drop_first=False,
         dtype=int,
     )
-    return frame.reindex(columns=feature_columns, fill_value=0)
 
-def validate(values):
+    return frame.reindex(
+        columns=feature_columns,
+        fill_value=0,
+    )
+
+
+def validate(values: dict) -> list[str]:
     errors = []
+
     if values["systolic"] <= values["relaxation"]:
-        errors.append("Systolic pressure must be higher than diastolic pressure.")
+        errors.append(
+            "Systolic pressure must be higher than diastolic pressure."
+        )
+
     if values["HDL"] > values["Cholesterol"]:
-        errors.append("HDL cannot be greater than total cholesterol.")
+        errors.append(
+            "HDL cannot be greater than total cholesterol."
+        )
+
     return errors
 
-def binary(answer):
-    return 1 if answer == "Yes" else 0
 
-st.markdown("""
-<section class="hero">
-  <div class="hero-badge"><span class="dot"></span>Screening-support prototype</div>
-  <h1>Support for the screening conversation that follows.</h1>
-  <p>Five inputs with the model's highest individual importance scores turn into a
-  model score in seconds — or complete the full 24-field profile for the model's
-  most faithful read. This is one input to a conversation, not a substitute for it.</p>
-  <div class="hero-stats">
-    <div><div class="hs-label">Model</div><div class="hs-value">Random Forest</div></div>
-    <div><div class="hs-label">Test accuracy</div><div class="hs-value">82.6%</div></div>
-    <div><div class="hs-label">Smoker F1-score</div><div class="hs-value">0.7708</div></div>
-    <div><div class="hs-label">Smoker recall</div><div class="hs-value">79.70%</div></div>
-    <div><div class="hs-label">Validation</div><div class="hs-value">5-fold CV</div></div>
-  </div>
-  <div class="hero-note">Accuracy, F1-score and recall are shown together because catching
-  the smoker class is the point of this tool — F1-score and recall matter at least as
-  much as overall accuracy, not less.</div>
-</section>
-""", unsafe_allow_html=True)
+def make_prediction(values: dict) -> dict:
+    model_input = encode(values)
 
-st.write("")
-st.write("")
-left, right = st.columns([1.55, 1])
-with left:
-    priority_pills = "".join(
-        f'<span class="pill"><b>{i+1}</b>{name}</span>'
-        for i, name in enumerate(["Gender", "Gtp", "Haemoglobin", "Triglycerides", "Height"])
-    )
-    st.markdown(f"""
-    <div class="card">
-    <div class="kicker">Feature priority</div>
-    <div class="title">The strongest individual model signals</div>
-    <div class="copy">
-    These five fields had the highest individual feature-importance scores in the
-    trained Random Forest. That doesn't make the rest optional: a model trained on
-    only these five performs measurably worse, so the full model still relies on
-    all 24 inputs together for its most reliable read.
+    predicted_class = int(model.predict(model_input)[0])
+    smoker_score = float(model.predict_proba(model_input)[0][1])
+
+    return {
+        "class": predicted_class,
+        "score": smoker_score,
+    }
+
+
+def render_result_panel(result: dict | None, mode: str) -> None:
+    st.markdown('<div class="result-sticky">', unsafe_allow_html=True)
+
+    if result is None:
+        st.markdown(
+            """
+            <div class="result-placeholder">
+                <div class="kicker">Prediction panel</div>
+                <h3>Your result will appear here</h3>
+                <p>
+                    Complete the assessment and select the prediction button.
+                    On desktop, the result stays visible beside the form.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    else:
+        predicted_class = result["class"]
+        smoker_score = result["score"]
+
+        if predicted_class == 1:
+            st.markdown(
+                f"""
+                <div class="result-card result-smoker">
+                    <div class="kicker">Model prediction</div>
+                    <h3>Predicted class: smoker</h3>
+                    <p>
+                        The submitted values are more similar to records
+                        classified as smokers by the trained Random Forest.
+                    </p>
+                    <div class="result-score">{smoker_score * 100:.1f}%</div>
+                    <div class="result-caption">model smoker score</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f"""
+                <div class="result-card result-nonsmoker">
+                    <div class="kicker">Model prediction</div>
+                    <h3>Predicted class: non-smoker</h3>
+                    <p>
+                        The submitted values are more similar to records
+                        classified as non-smokers by the trained Random Forest.
+                    </p>
+                    <div class="result-score">{smoker_score * 100:.1f}%</div>
+                    <div class="result-caption">model smoker score</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        st.progress(smoker_score)
+
+        if mode == "Quick Assessment":
+            st.warning(
+                "Quick Assessment uses reference defaults for the remaining "
+                "features. Use Full Assessment for the most complete result."
+            )
+        elif predicted_class == 1:
+            st.warning(
+                "A smoker prediction can still be a false positive. "
+                "Confirm smoking status directly."
+            )
+        else:
+            st.info(
+                "A non-smoker prediction can still be a false negative. "
+                "This result is not proof."
+            )
+
+        with st.expander("Model limitations"):
+            st.markdown(
+                """
+- This output is not a diagnosis or verified smoking status.
+- The model can produce false positives and false negatives.
+- The model smoker score is not a calibrated medical probability.
+- Gender was highly influential, which may create fairness concerns.
+- Feature importance does not mean that a feature causes smoking.
+                """
+            )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# =========================================================
+# SESSION STATE
+# =========================================================
+if "prediction_result" not in st.session_state:
+    st.session_state.prediction_result = None
+
+if "prediction_mode" not in st.session_state:
+    st.session_state.prediction_mode = "Full Assessment"
+
+if "prediction_inputs" not in st.session_state:
+    st.session_state.prediction_inputs = None
+
+
+# =========================================================
+# IMPRESSIVE TOP SECTION
+# =========================================================
+st.markdown(
+    """
+    <div class="ticker">
+        <div class="ticker-track">
+            <span>Quick or full assessment</span>
+            <span class="accent">·</span>
+            <span>Random Forest model</span>
+            <span class="accent">·</span>
+            <span>Screening support, not a diagnosis</span>
+            <span class="accent">·</span>
+            <span>Quick or full assessment</span>
+            <span class="accent">·</span>
+            <span>Random Forest model</span>
+            <span class="accent">·</span>
+            <span>Screening support, not a diagnosis</span>
+            <span class="accent">·</span>
+        </div>
     </div>
-    <div class="pills">{priority_pills}</div></div>
-    """, unsafe_allow_html=True)
 
-with right:
-    st.markdown("""
-    <div class="card">
-    <div class="kicker">Important</div>
-    <div class="title">Quick mode is an approximation</div>
-    <div class="copy">
-    Quick mode silently fills 19 of 24 model inputs with generic reference
-    defaults, not this person's real values. Treat it as a fast demonstration,
-    not a result you'd act on -- use Full Assessment for anything that matters.
-    </div></div>
-    """, unsafe_allow_html=True)
+    <section class="hero">
+        <div class="hero-grid">
+            <div>
+                <div class="hero-badge">
+                    <span class="dot"></span>
+                    Screening-support prototype
+                </div>
 
-with st.expander("What do accuracy, F1-score and recall mean?"):
-    st.markdown("""
-- **Accuracy** -- the share of all predictions (smoker and non-smoker) the model got right on held-out test data.
-- **Recall** (smoker class) -- of everyone who actually was a smoker in the test data, the share the model correctly flagged. Low recall means missed smokers (false negatives).
-- **Precision** (smoker class) -- of everyone the model flagged as a smoker, the share who actually were. Low precision means non-smokers get incorrectly flagged (false positives).
-- **F1-score** -- a single number balancing precision and recall together, useful because optimising for one alone can quietly wreck the other.
+                <h1>
+                    Read the signal<br>
+                    before <em>you</em> ask.
+                </h1>
 
-This project weighted F1-score and recall for the smoker class as more relevant than raw accuracy, since the whole point is catching smokers reliably, not just getting the majority class right.
-    """)
+                <p>
+                    Start with five high-priority inputs for a fast demonstration,
+                    or complete the full screening profile for the model's most
+                    faithful prediction. The output supports a conversation;
+                    it does not replace one.
+                </p>
+            </div>
+
+            <div class="hero-gauge-wrap">
+                <svg viewBox="0 0 300 165"
+                     class="hero-gauge"
+                     xmlns="http://www.w3.org/2000/svg">
+
+                    <path d="M20,150 A130,130 0 0,1 280,150"
+                          fill="none"
+                          stroke="var(--line)"
+                          stroke-width="3"
+                          stroke-linecap="round"/>
+
+                    <path d="M20,150 A130,130 0 0,1 261,83"
+                          fill="none"
+                          stroke="var(--ember)"
+                          stroke-width="3"
+                          stroke-linecap="round"/>
+
+                    <circle cx="261"
+                            cy="83"
+                            r="8"
+                            fill="var(--bg)"
+                            stroke="var(--ember)"
+                            stroke-width="3"/>
+
+                    <text x="150"
+                          y="122"
+                          text-anchor="middle"
+                          font-family="monospace"
+                          font-size="36"
+                          font-weight="600"
+                          fill="var(--ink)">
+                        82.6%
+                    </text>
+                </svg>
+
+                <div class="hero-gauge-label">
+                    Held-out test accuracy
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-meta">
+            <div>
+                <div class="meta-label">Model</div>
+                <div class="meta-value">Random Forest</div>
+            </div>
+
+            <div>
+                <div class="meta-label">Smoker F1-score</div>
+                <div class="meta-value">0.7708</div>
+            </div>
+
+            <div>
+                <div class="meta-label">Smoker recall</div>
+                <div class="meta-value">79.70%</div>
+            </div>
+
+            <div>
+                <div class="meta-label">Validation</div>
+                <div class="meta-value">5-fold CV</div>
+            </div>
+        </div>
+    </section>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.write("")
-mode_col, reset_col = st.columns([4, 1])
-with mode_col:
+st.write("")
+
+info_left, info_right = st.columns([1.55, 1])
+
+with info_left:
+    priority_pills = "".join(
+        f'<span class="pill"><b>{index + 1}</b>{name}</span>'
+        for index, name in enumerate(
+            [
+                "Gender",
+                "Gtp",
+                "Haemoglobin",
+                "Triglycerides",
+                "Height",
+            ]
+        )
+    )
+
+    st.markdown(
+        f"""
+        <div class="card">
+            <div class="kicker">Feature priority</div>
+            <div class="title">
+                The strongest individual model signals
+            </div>
+            <div class="copy">
+                These five fields had the highest individual feature-importance
+                scores. The complete model still relies on all available inputs,
+                because the reduced-feature experiment performed worse.
+            </div>
+            <div class="pills">{priority_pills}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+with info_right:
+    st.markdown(
+        """
+        <div class="card">
+            <div class="kicker">Important</div>
+            <div class="title">
+                Quick mode is an approximation
+            </div>
+            <div class="copy">
+                Quick Assessment fills the remaining inputs using reference
+                defaults. Full Assessment should be used whenever actual
+                screening values are available.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+st.write("")
+
+mode_actions, reset_actions = st.columns([4, 1])
+
+with mode_actions:
     mode = st.radio(
         "Assessment mode",
         ["Quick Assessment", "Full Assessment"],
         horizontal=True,
     )
-with reset_col:
+
+with reset_actions:
     st.write("")
-    if st.button("Reset all fields", use_container_width=True):
-        st.session_state.clear()
+    if st.button("Reset result", use_container_width=True):
+        st.session_state.prediction_result = None
+        st.session_state.prediction_inputs = None
         st.rerun()
+
 st.write("")
 
-input_values = None
-source_text = ""
 
+# =========================================================
+# FORM LEFT / RESULT RIGHT
+# =========================================================
+form_column, result_column = st.columns([1.75, 1], gap="large")
+
+
+# ---------------------------------------------------------
+# QUICK ASSESSMENT
+# ---------------------------------------------------------
 if mode == "Quick Assessment":
-    st.markdown("""
-    <div class="card">
-    <div class="kicker">Approximate · demonstration only</div>
-    <div class="title">Five inputs entered, nineteen defaulted</div>
-    <div class="copy">
-    You provide the 5 highest-importance fields; the other 19 of 24 model inputs
-    are filled with generic reference defaults, not measurements from this person.
-    The result below can shift substantially once real values are entered --
-    use Full Assessment before relying on it.
-    </div></div>
-    """, unsafe_allow_html=True)
-    st.write("")
+    with form_column:
+        st.markdown(
+            """
+            <div class="card">
+                <div class="kicker">Fast demonstration</div>
+                <div class="title">Enter five high-priority inputs</div>
+                <div class="copy">
+                    The other model inputs use reference defaults. This mode is
+                    faster, but less personalised than Full Assessment.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    with st.container(border=True):
-        gauge_section_header("01")
-        g1, g2, g3 = st.columns(3)
-        with g1:
-            gtp = interactive_gauge("Gtp", key="quick_gtp")
-        with g2:
-            hemoglobin = interactive_gauge("hemoglobin", key="quick_hemoglobin")
-        with g3:
-            triglyceride = interactive_gauge("triglyceride", key="quick_triglyceride")
+        st.write("")
 
-        st.markdown('<div class="section-head"><span class="n">02</span><span class="t">Other priority fields</span><div class="r"></div></div>', unsafe_allow_html=True)
-        p1, p2, p3 = st.columns(3)
-        with p1:
-            gender = st.selectbox(
-                "Gender (gender) · #1 priority", ["F", "M"],
-                format_func=lambda x: "Female" if x == "F" else "Male",
-            )
-            desc("Highest-ranked categorical input after encoding.")
-        with p2:
-            height = st.number_input(
-                "Height in centimetres (height(cm)) · #5 priority",
-                130, 190, 165, 5,
-            )
-            desc("Physical measurement that ranked strongly in the model.")
-        with p3:
+        with st.container(border=True):
             st.markdown(
-                '<div class="warn-box">19 remaining inputs use generic reference defaults, not real measurements from this person -- the result below may change once actual values are entered.</div>',
+                """
+                <div class="section-head">
+                    <span class="n">01</span>
+                    <span class="t">Priority laboratory values</span>
+                    <div class="r"></div>
+                </div>
+                """,
                 unsafe_allow_html=True,
             )
-        st.markdown('<div class="note" style="margin-top:.6rem">Prediction below updates live as you adjust these fields.</div>', unsafe_allow_html=True)
 
-    input_values = REFERENCE_DEFAULTS.copy()
-    input_values.update({
-        "gender": gender,
-        "height(cm)": height,
-        "Gtp": gtp,
-        "hemoglobin": hemoglobin,
-        "triglyceride": triglyceride,
-    })
-    source_text = "Quick Assessment using reference defaults"
+            lab_1, lab_2, lab_3 = st.columns(3)
 
-else:
-    st.markdown("""
-    <div class="card">
-    <div class="kicker">Recommended</div>
-    <div class="title">Complete the full screening profile</div>
-    <div class="copy">
-    This mode uses every raw feature required by the final model and provides
-    the most faithful prediction for the submitted screening record.
-    </div></div>
-    """, unsafe_allow_html=True)
-    st.write("")
+            with lab_1:
+                gtp = st.number_input(
+                    "Gamma-glutamyl transferase (Gtp)",
+                    min_value=1.0,
+                    max_value=999.0,
+                    value=25.0,
+                    step=1.0,
+                    key="quick_gtp",
+                )
+                desc("High-priority liver-enzyme measurement.")
 
-    with st.container(border=True):
-        t1, t2, t3, t4 = st.tabs([
-            "1. Priority inputs",
-            "2. Screening checks",
-            "3. Additional blood tests",
-            "4. Oral health",
-        ])
-        with t1:
-            st.markdown('<div class="info-box">These fields appeared among the strongest signals in the model ranking. Gauges show where each value sits against a general adult reference range.</div>', unsafe_allow_html=True)
-            gauge_section_header("01")
-            g1, g2, g3 = st.columns(3)
-            with g1:
-                gtp = interactive_gauge("Gtp", key="full_gtp")
-            with g2:
-                hemoglobin = interactive_gauge("hemoglobin", key="full_hemoglobin")
-            with g3:
-                triglyceride = interactive_gauge("triglyceride", key="full_triglyceride")
-            st.markdown('<div class="section-head"><span class="n">02</span><span class="t">Other priority fields</span><div class="r"></div></div>', unsafe_allow_html=True)
-            p1, p2, p3 = st.columns(3)
-            with p1:
+            with lab_2:
+                hemoglobin = st.number_input(
+                    "Haemoglobin concentration (hemoglobin)",
+                    min_value=4.9,
+                    max_value=21.1,
+                    value=14.8,
+                    step=0.1,
+                    key="quick_hemoglobin",
+                )
+                desc("High-priority oxygen-carrying blood measurement.")
+
+            with lab_3:
+                triglyceride = st.number_input(
+                    "Triglycerides (triglyceride)",
+                    min_value=8.0,
+                    max_value=999.0,
+                    value=108.0,
+                    step=1.0,
+                    key="quick_triglyceride",
+                )
+                desc("High-priority blood-fat measurement.")
+
+            st.markdown(
+                """
+                <div class="section-head">
+                    <span class="n">02</span>
+                    <span class="t">Personal measurements</span>
+                    <div class="r"></div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            personal_1, personal_2 = st.columns(2)
+
+            with personal_1:
                 gender = st.selectbox(
-                    "Gender (gender) · #1 priority", ["F", "M"],
-                    format_func=lambda x: "Female" if x == "F" else "Male",
+                    "Gender (gender)",
+                    ["F", "M"],
+                    format_func=lambda value: (
+                        "Female" if value == "F" else "Male"
+                    ),
+                    key="quick_gender",
                 )
-                desc("Recorded sex category used after one-hot encoding.")
-            with p2:
+                desc("Highest-ranked categorical model input.")
+
+            with personal_2:
                 height = st.number_input(
-                    "Height in centimetres (height(cm)) · #5 priority",
-                    130, 190, 165, 5,
+                    "Height in centimetres (height(cm))",
+                    min_value=130,
+                    max_value=190,
+                    value=165,
+                    step=5,
+                    key="quick_height",
                 )
-                desc("Standing height measured in centimetres.")
-            with p3:
-                age = st.number_input("Age in years (age)", 20, 85, 40, 5)
-                desc("Age at the time of screening.")
+                desc("Physical measurement with high model importance.")
 
-        with t2:
-            gauge_section_header("01")
-            g1, g2, g3 = st.columns(3)
-            with g1:
-                waist = interactive_gauge("waist(cm)", key="waist")
-            with g2:
-                systolic = interactive_gauge("systolic", key="systolic")
-            with g3:
-                relaxation = interactive_gauge("relaxation", key="relaxation")
-            st.markdown('<div class="section-head"><span class="n">02</span><span class="t">Other screening fields</span><div class="r"></div></div>', unsafe_allow_html=True)
-            p1, p2, p3 = st.columns(3)
-            with p1:
-                weight = st.number_input(
-                    "Weight in kilograms (weight(kg))",
-                    30, 135, 65, 5,
-                )
-            with p2:
-                eyesight_left = st.number_input(
-                    "Left-eye eyesight score (eyesight(left))",
-                    0.1, 9.9, 1.0, 0.1,
-                    help="Visual acuity score as coded in the source dataset. The exact scale "
-                         "and test method aren't documented here -- confirm against the original "
-                         "data dictionary before relying on this field.",
-                )
-                eyesight_right = st.number_input(
-                    "Right-eye eyesight score (eyesight(right))",
-                    0.1, 9.9, 1.0, 0.1,
-                    help="Same coding as the left-eye score above.",
-                )
-            with p3:
-                hearing_left = st.selectbox(
-                    "Left-ear hearing (hearing(left))",
-                    [1.0, 2.0],
-                    format_func=lambda x: "1 — Normal" if x == 1.0 else "2 — Reduced",
-                )
-                hearing_right = st.selectbox(
-                    "Right-ear hearing (hearing(right))",
-                    [1.0, 2.0],
-                    format_func=lambda x: "1 — Normal" if x == 1.0 else "2 — Reduced",
-                )
-
-        with t3:
-            gauge_section_header("01")
-            g1, g2, g3, g4 = st.columns(4)
-            with g1:
-                fasting = interactive_gauge("fasting blood sugar", key="fasting")
-            with g2:
-                cholesterol = interactive_gauge("Cholesterol", key="cholesterol")
-            with g3:
-                hdl = interactive_gauge("HDL", key="hdl")
-            with g4:
-                ldl = interactive_gauge("LDL", key="ldl")
-            g5, g6, g7, g8 = st.columns(4)
-            with g5:
-                creatinine = interactive_gauge("serum creatinine", key="creatinine")
-            with g6:
-                ast = interactive_gauge("AST", key="ast")
-            with g7:
-                alt = interactive_gauge("ALT", key="alt")
-            with g8:
-                urine = st.selectbox(
-                    "Urine protein category (Urine protein)",
-                    [1.0,2.0,3.0,4.0,5.0,6.0],
-                    help="Categorical grade as coded in the source dataset (1 = lowest, "
-                         "6 = highest). Exact clinical thresholds per level aren't documented "
-                         "here -- confirm against the original data dictionary.",
-                )
             st.markdown(
-                '<div class="warn-box">These lower-ranked features were retained because the reduced-feature model performed worse. Reference bands are general adult population ranges, shown for context only — not a diagnosis.</div>',
+                """
+                <div class="warn-box">
+                    The remaining model fields use generic reference defaults,
+                    not this person's actual measurements.
+                </div>
+                """,
                 unsafe_allow_html=True,
             )
-
-        with t4:
-            c1, c2 = st.columns(2)
-            with c1:
-                caries_answer = st.radio(
-                    "Dental caries present? (dental caries)",
-                    ["No", "Yes"], horizontal=True,
-                )
-            with c2:
-                tartar = st.radio(
-                    "Tartar present? (tartar)",
-                    ["N", "Y"],
-                    format_func=lambda x: "No" if x == "N" else "Yes",
-                    horizontal=True,
-                )
-
-        st.markdown('<div class="note" style="margin:.6rem 0 .2rem">Prediction below updates live as you adjust any field in any tab.</div>', unsafe_allow_html=True)
-
-    input_values = {
-        "gender": gender, "age": age, "height(cm)": height,
-        "weight(kg)": weight, "waist(cm)": waist,
-        "eyesight(left)": eyesight_left, "eyesight(right)": eyesight_right,
-        "hearing(left)": hearing_left, "hearing(right)": hearing_right,
-        "systolic": systolic, "relaxation": relaxation,
-        "fasting blood sugar": fasting, "Cholesterol": cholesterol,
-        "triglyceride": triglyceride, "HDL": hdl, "LDL": ldl,
-        "hemoglobin": hemoglobin, "Urine protein": urine,
-        "serum creatinine": creatinine, "AST": ast, "ALT": alt,
-        "Gtp": gtp, "dental caries": binary(caries_answer), "tartar": tartar,
-    }
-    source_text = "Full Assessment using all 24 model inputs"
-
-if input_values is not None:
-    errors = validate(input_values)
-    if errors:
-        st.error("Please correct the following:")
-        for error in errors:
-            st.write(f"- {error}")
-    else:
-        try:
-            model_input = encode(input_values)
-            prediction = int(model.predict(model_input)[0])
-            probability = float(model.predict_proba(model_input)[0][1])
 
             st.write("")
-            st.markdown("## Prediction result")
-            left, right = st.columns([1.55, 1])
 
-            with left:
-                if prediction == 1:
-                    st.markdown("""
-                    <div class="result smoker">
-                    <div class="kicker">Model prediction</div>
-                    <h3>Predicted class: smoker</h3>
-                    <p>This is the model's classification, not confirmation of smoking status --
-                    the model can and does get this wrong in both directions.</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown("""
-                    <div class="result nonsmoker">
-                    <div class="kicker">Model prediction</div>
-                    <h3>Predicted class: non-smoker</h3>
-                    <p>This is the model's classification, not confirmation of smoking status --
-                    the model can and does get this wrong in both directions.</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+            quick_predict = st.button(
+                "Generate quick prediction",
+                type="primary",
+                use_container_width=True,
+                key="quick_predict",
+            )
 
-            with right:
+        if quick_predict:
+            quick_values = REFERENCE_DEFAULTS.copy()
+
+            quick_values.update(
+                {
+                    "gender": gender,
+                    "height(cm)": height,
+                    "Gtp": gtp,
+                    "hemoglobin": hemoglobin,
+                    "triglyceride": triglyceride,
+                }
+            )
+
+            errors = validate(quick_values)
+
+            if errors:
+                for error in errors:
+                    st.error(error)
+            else:
+                st.session_state.prediction_result = make_prediction(
+                    quick_values
+                )
+                st.session_state.prediction_inputs = quick_values
+                st.session_state.prediction_mode = mode
+
+    with result_column:
+        render_result_panel(
+            st.session_state.prediction_result,
+            st.session_state.prediction_mode,
+        )
+
+
+# ---------------------------------------------------------
+# FULL ASSESSMENT
+# ---------------------------------------------------------
+else:
+    with form_column:
+        st.markdown(
+            """
+            <div class="card">
+                <div class="kicker">Recommended</div>
+                <div class="title">
+                    Complete the full screening profile
+                </div>
+                <div class="copy">
+                    This mode supplies every raw feature required by the final
+                    model and produces the most faithful result for the entered
+                    screening record.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.write("")
+
+        with st.container(border=True):
+            priority_tab, screening_tab, blood_tab, oral_tab = st.tabs(
+                [
+                    "1. Priority inputs",
+                    "2. Screening checks",
+                    "3. Additional blood tests",
+                    "4. Oral health",
+                ]
+            )
+
+            with priority_tab:
                 st.markdown(
-                    f'<div class="confidence"><div class="label">Model confidence score</div>'
-                    f'<div class="confidence-value">{probability*100:.1f}%</div>'
-                    f'<div class="note">{source_text} · not a calibrated probability</div></div>',
+                    """
+                    <div class="info-box">
+                        These fields had the highest individual feature-importance
+                        scores in the trained Random Forest.
+                    </div>
+                    """,
                     unsafe_allow_html=True,
                 )
 
-            st.progress(probability)
+                priority_1, priority_2, priority_3 = st.columns(3)
 
-            if mode == "Quick Assessment":
-                st.warning(
-                    "Quick Assessment: 19 of 24 inputs are generic reference defaults, not "
-                    "this person's real values. Use Full Assessment before relying on this result."
-                )
-            elif prediction == 1:
-                st.warning("A predicted smoker can still be a non-smoker (false positive). Confirm directly before taking action.")
+                with priority_1:
+                    gender = st.selectbox(
+                        "Gender (gender)",
+                        ["F", "M"],
+                        format_func=lambda value: (
+                            "Female" if value == "F" else "Male"
+                        ),
+                        key="full_gender",
+                    )
+                    desc("Highest-ranked categorical model input.")
+
+                    height = st.number_input(
+                        "Height in centimetres (height(cm))",
+                        min_value=130,
+                        max_value=190,
+                        value=165,
+                        step=5,
+                        key="full_height",
+                    )
+                    desc("Standing height measured in centimetres.")
+
+                with priority_2:
+                    gtp = st.number_input(
+                        "Gamma-glutamyl transferase (Gtp)",
+                        min_value=1.0,
+                        max_value=999.0,
+                        value=25.0,
+                        step=1.0,
+                        key="full_gtp",
+                    )
+                    desc("High-priority liver-enzyme measurement.")
+
+                    hemoglobin = st.number_input(
+                        "Haemoglobin concentration (hemoglobin)",
+                        min_value=4.9,
+                        max_value=21.1,
+                        value=14.8,
+                        step=0.1,
+                        key="full_hemoglobin",
+                    )
+                    desc("High-priority oxygen-carrying blood measurement.")
+
+                with priority_3:
+                    triglyceride = st.number_input(
+                        "Triglycerides (triglyceride)",
+                        min_value=8.0,
+                        max_value=999.0,
+                        value=108.0,
+                        step=1.0,
+                        key="full_triglyceride",
+                    )
+                    desc("High-priority blood-fat measurement.")
+
+                    age = st.number_input(
+                        "Age in years (age)",
+                        min_value=20,
+                        max_value=85,
+                        value=40,
+                        step=5,
+                        key="full_age",
+                    )
+                    desc("Age at the time of screening.")
+
+            with screening_tab:
+                screening_1, screening_2, screening_3 = st.columns(3)
+
+                with screening_1:
+                    weight = st.number_input(
+                        "Weight in kilograms (weight(kg))",
+                        min_value=30,
+                        max_value=135,
+                        value=65,
+                        step=5,
+                        key="full_weight",
+                    )
+
+                    waist = st.number_input(
+                        "Waist circumference (waist(cm))",
+                        min_value=51.0,
+                        max_value=129.0,
+                        value=82.0,
+                        step=0.5,
+                        key="full_waist",
+                    )
+
+                with screening_2:
+                    eyesight_left = st.number_input(
+                        "Left-eye eyesight score (eyesight(left))",
+                        min_value=0.1,
+                        max_value=9.9,
+                        value=1.0,
+                        step=0.1,
+                        key="full_eyesight_left",
+                    )
+
+                    eyesight_right = st.number_input(
+                        "Right-eye eyesight score (eyesight(right))",
+                        min_value=0.1,
+                        max_value=9.9,
+                        value=1.0,
+                        step=0.1,
+                        key="full_eyesight_right",
+                    )
+
+                    hearing_left = st.selectbox(
+                        "Left-ear hearing (hearing(left))",
+                        [1.0, 2.0],
+                        format_func=lambda value: (
+                            "1 — Normal"
+                            if value == 1.0
+                            else "2 — Reduced"
+                        ),
+                        key="full_hearing_left",
+                    )
+
+                    hearing_right = st.selectbox(
+                        "Right-ear hearing (hearing(right))",
+                        [1.0, 2.0],
+                        format_func=lambda value: (
+                            "1 — Normal"
+                            if value == 1.0
+                            else "2 — Reduced"
+                        ),
+                        key="full_hearing_right",
+                    )
+
+                with screening_3:
+                    systolic = st.number_input(
+                        "Systolic pressure (systolic)",
+                        min_value=71.0,
+                        max_value=240.0,
+                        value=120.0,
+                        step=1.0,
+                        key="full_systolic",
+                    )
+
+                    relaxation = st.number_input(
+                        "Diastolic pressure (relaxation)",
+                        min_value=40.0,
+                        max_value=146.0,
+                        value=76.0,
+                        step=1.0,
+                        key="full_relaxation",
+                    )
+
+            with blood_tab:
+                blood_1, blood_2, blood_3 = st.columns(3)
+
+                with blood_1:
+                    fasting = st.number_input(
+                        "Fasting blood glucose (fasting blood sugar)",
+                        min_value=46.0,
+                        max_value=505.0,
+                        value=96.0,
+                        step=1.0,
+                        key="full_fasting",
+                    )
+
+                    cholesterol = st.number_input(
+                        "Total cholesterol (Cholesterol)",
+                        min_value=55.0,
+                        max_value=445.0,
+                        value=195.0,
+                        step=1.0,
+                        key="full_cholesterol",
+                    )
+
+                    hdl = st.number_input(
+                        "HDL (HDL)",
+                        min_value=4.0,
+                        max_value=618.0,
+                        value=55.0,
+                        step=1.0,
+                        key="full_hdl",
+                    )
+
+                    ldl = st.number_input(
+                        "LDL (LDL)",
+                        min_value=1.0,
+                        max_value=1860.0,
+                        value=113.0,
+                        step=1.0,
+                        key="full_ldl",
+                    )
+
+                with blood_2:
+                    urine = st.selectbox(
+                        "Urine protein category (Urine protein)",
+                        [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                        key="full_urine",
+                    )
+
+                    creatinine = st.number_input(
+                        "Serum creatinine (serum creatinine)",
+                        min_value=0.1,
+                        max_value=11.6,
+                        value=0.9,
+                        step=0.1,
+                        key="full_creatinine",
+                    )
+
+                    ast = st.number_input(
+                        "AST (AST)",
+                        min_value=6.0,
+                        max_value=1311.0,
+                        value=23.0,
+                        step=1.0,
+                        key="full_ast",
+                    )
+
+                    alt = st.number_input(
+                        "ALT (ALT)",
+                        min_value=1.0,
+                        max_value=2914.0,
+                        value=21.0,
+                        step=1.0,
+                        key="full_alt",
+                    )
+
+                with blood_3:
+                    st.markdown(
+                        """
+                        <div class="warn-box">
+                            Lower-ranked features were retained because the
+                            reduced-feature experiment produced weaker results.
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+            with oral_tab:
+                oral_1, oral_2 = st.columns(2)
+
+                with oral_1:
+                    caries_answer = st.radio(
+                        "Dental caries present? (dental caries)",
+                        ["No", "Yes"],
+                        horizontal=True,
+                        key="full_caries",
+                    )
+
+                with oral_2:
+                    tartar = st.radio(
+                        "Tartar present? (tartar)",
+                        ["N", "Y"],
+                        format_func=lambda value: (
+                            "No" if value == "N" else "Yes"
+                        ),
+                        horizontal=True,
+                        key="full_tartar",
+                    )
+
+            st.write("")
+
+            full_predict = st.button(
+                "Generate full prediction",
+                type="primary",
+                use_container_width=True,
+                key="full_predict",
+            )
+
+        if full_predict:
+            full_values = {
+                "gender": gender,
+                "age": age,
+                "height(cm)": height,
+                "weight(kg)": weight,
+                "waist(cm)": waist,
+                "eyesight(left)": eyesight_left,
+                "eyesight(right)": eyesight_right,
+                "hearing(left)": hearing_left,
+                "hearing(right)": hearing_right,
+                "systolic": systolic,
+                "relaxation": relaxation,
+                "fasting blood sugar": fasting,
+                "Cholesterol": cholesterol,
+                "triglyceride": triglyceride,
+                "HDL": hdl,
+                "LDL": ldl,
+                "hemoglobin": hemoglobin,
+                "Urine protein": urine,
+                "serum creatinine": creatinine,
+                "AST": ast,
+                "ALT": alt,
+                "Gtp": gtp,
+                "dental caries": binary(caries_answer),
+                "tartar": tartar,
+            }
+
+            errors = validate(full_values)
+
+            if errors:
+                for error in errors:
+                    st.error(error)
             else:
-                st.info("A predicted non-smoker can still be a smoker (false negative). This result is not proof either way.")
+                st.session_state.prediction_result = make_prediction(
+                    full_values
+                )
+                st.session_state.prediction_inputs = full_values
+                st.session_state.prediction_mode = mode
 
-            with st.expander("Model limitations -- read before acting on this", expanded=False):
-                st.markdown("""
-- **Not a diagnosis.** This model estimates a pattern match to a training dataset. It cannot
-  confirm smoking status, and its output should never be recorded as a medical conclusion.
-- **False positives and false negatives happen.** Held-out recall for the smoker class is
-  about 79.7% -- meaning roughly 1 in 5 actual smokers in testing were missed, and non-smokers
-  can also be incorrectly flagged. Precision and recall aren't 100% in either direction.
-- **The confidence score is not a calibrated probability.** `predict_proba()` reflects the
-  model's internal confidence, which may not match real-world frequencies unless calibration
-  has been separately verified.
-- **Gender was a highly influential feature** in this model. That can raise fairness and
-  generalisation concerns -- it may not perform equally well across groups not well
-  represented in the training data.
-- **Reference-range gauges use general adult population bands**, not ranges derived from
-  this dataset. They may not match the exact units, sex, age group or lab methodology
-  behind the numbers you enter, and are shown for orientation only -- never as a diagnosis.
-- **Feature importance is not causation.** A field ranking highly means the model relied on
-  it statistically, not that it causes smoking.
-                """)
+    with result_column:
+        render_result_panel(
+            st.session_state.prediction_result,
+            st.session_state.prediction_mode,
+        )
 
-            with st.expander("Review model inputs"):
-                table = pd.DataFrame({
-                    "Feature": list(input_values.keys()),
-                    "Value supplied": list(input_values.values()),
-                    "Source": [
+
+# =========================================================
+# REVIEW INPUTS
+# =========================================================
+if st.session_state.prediction_inputs is not None:
+    st.write("")
+
+    with st.expander("Review values supplied to the model"):
+        values = st.session_state.prediction_inputs
+
+        review_table = pd.DataFrame(
+            {
+                "Feature": list(values.keys()),
+                "Value supplied": list(values.values()),
+                "Source": [
+                    (
                         "User entered"
-                        if mode == "Full Assessment" or feature in PRIORITY_FEATURES
+                        if (
+                            st.session_state.prediction_mode
+                            == "Full Assessment"
+                            or feature in PRIORITY_FEATURES
+                        )
                         else "Reference default"
-                        for feature in input_values
-                    ],
-                })
-                st.dataframe(table, use_container_width=True, hide_index=True)
+                    )
+                    for feature in values
+                ],
+            }
+        )
 
-        except Exception as exc:
-            st.error("The prediction could not be completed. Please try adjusting your inputs.")
-            with st.expander("Technical details (for support/debugging)"):
-                st.code(str(exc))
+        st.dataframe(
+            review_table,
+            use_container_width=True,
+            hide_index=True,
+        )
 
+
+# =========================================================
+# FOOTER
+# =========================================================
 st.write("")
 st.divider()
-st.markdown(f"""
-<div class="foot">
-<strong>SmokeScreen</strong> is an educational machine-learning prototype for authorised
-health-screening staff. It supports a follow-up screening conversation and does not replace
-direct confirmation, clinical judgement or professional advice, and its output is not a
-diagnosis or verified smoking status. Reference ranges shown on lab values are general adult
-population bands for orientation only, not values derived from this dataset. Entered
-information is used only to compute the prediction shown above and is not retained as a
-medical record.<br><br>
-Model version: {MODEL_VERSION} · Trained: {MODEL_TRAINED_ON}
-</div>
-""", unsafe_allow_html=True)
+
+st.markdown(
+    """
+    <div class="foot">
+        <strong>SmokeScreen</strong> is an educational machine-learning
+        prototype. It supports a follow-up screening conversation and does
+        not replace direct confirmation, clinical judgement or professional
+        advice. The model score is not a calibrated medical probability.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
