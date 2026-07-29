@@ -634,6 +634,25 @@ REFERENCE_DEFAULTS = {
     "tartar": "N",
 }
 
+
+PRIORITY_REFERENCE_BANDS = {
+    "Gtp": {
+        "low": 8.0,
+        "high": 61.0,
+        "unit": "U/L",
+    },
+    "hemoglobin": {
+        "low": 12.0,
+        "high": 17.5,
+        "unit": "g/dL",
+    },
+    "triglyceride": {
+        "low": 8.0,
+        "high": 149.0,
+        "unit": "mg/dL",
+    },
+}
+
 PRIORITY_FEATURES = {
     "gender",
     "Gtp",
@@ -720,6 +739,7 @@ def validate(values: dict) -> list[str]:
 
 
 def slider_input(
+    feature_name: str,
     label: str,
     minimum: float,
     maximum: float,
@@ -728,7 +748,7 @@ def slider_input(
     key: str,
     note: str,
 ) -> float:
-    """Render a styled slider for an important numeric model feature."""
+    """Render a priority input slider with a readable reference-status badge."""
     value = st.slider(
         label,
         min_value=minimum,
@@ -738,11 +758,33 @@ def slider_input(
         key=key,
     )
 
+    reference = PRIORITY_REFERENCE_BANDS[feature_name]
+    low = reference["low"]
+    high = reference["high"]
+    unit = reference["unit"]
+
+    if value < low:
+        status_text = "Below reference"
+        status_class = "status-low"
+    elif value > high:
+        status_text = "Above reference"
+        status_class = "status-high"
+    else:
+        status_text = "Within reference"
+        status_class = "status-range"
+
     st.markdown(
         (
-            '<div class="slider-value">'
-            f'<span>range {minimum:g}–{maximum:g}</span>'
-            f'<strong>selected {value:g}</strong>'
+            '<div class="slider-summary">'
+            '<div class="slider-reading">'
+            '<span class="slider-reading-label">Selected value</span>'
+            f'<span class="slider-reading-value">{value:g} {unit}</span>'
+            '</div>'
+            f'<span class="status-badge {status_class}">{status_text}</span>'
+            '</div>'
+            '<div class="reference-note">'
+            f'Context band: {low:g}–{high:g} {unit}. '
+            'Shown for orientation only and not as a diagnosis.'
             '</div>'
         ),
         unsafe_allow_html=True,
@@ -774,8 +816,8 @@ def render_result_panel(result: dict | None, mode: str) -> None:
                 <div class="kicker">Prediction panel</div>
                 <h3>Your result will appear here</h3>
                 <p>
-                    Complete the assessment and select the prediction button.
-                    On desktop, the result stays visible beside the form.
+                    Enter the assessment values on the left, then generate a prediction.
+                    The result stays visible here while you review or adjust the form.
                 </p>
             </div>
             """,
@@ -1093,6 +1135,7 @@ if mode == "Quick Assessment":
 
             with lab_1:
                 gtp = slider_input(
+                    "Gtp",
                     "Gamma-glutamyl transferase (Gtp)",
                     1.0,
                     999.0,
@@ -1104,6 +1147,7 @@ if mode == "Quick Assessment":
 
             with lab_2:
                 hemoglobin = slider_input(
+                    "hemoglobin",
                     "Haemoglobin concentration (hemoglobin)",
                     4.9,
                     21.1,
@@ -1115,6 +1159,7 @@ if mode == "Quick Assessment":
 
             with lab_3:
                 triglyceride = slider_input(
+                    "triglyceride",
                     "Triglycerides (triglyceride)",
                     8.0,
                     999.0,
@@ -1280,6 +1325,7 @@ else:
 
                 with priority_2:
                     gtp = slider_input(
+                        "Gtp",
                         "Gamma-glutamyl transferase (Gtp)",
                         1.0,
                         999.0,
@@ -1290,6 +1336,7 @@ else:
                     )
 
                     hemoglobin = slider_input(
+                        "hemoglobin",
                         "Haemoglobin concentration (hemoglobin)",
                         4.9,
                         21.1,
@@ -1301,6 +1348,7 @@ else:
 
                 with priority_3:
                     triglyceride = slider_input(
+                        "triglyceride",
                         "Triglycerides (triglyceride)",
                         8.0,
                         999.0,
