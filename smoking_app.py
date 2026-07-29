@@ -704,6 +704,97 @@ st.markdown(
     }
 
 
+
+    /* =====================================================
+       REFINED SLIDER + NUMBER INPUT
+       ===================================================== */
+    .slider-field-wrap{
+        margin-bottom:.35rem;
+    }
+
+    .slider-field-title{
+        margin-bottom:.45rem;
+        color:var(--ink)!important;
+        font-size:.9rem;
+        font-weight:600;
+        line-height:1.35;
+    }
+
+    .exact-value-label{
+        margin-bottom:.3rem;
+        font-family:var(--font-mono);
+        font-size:.62rem;
+        font-weight:700;
+        letter-spacing:.06em;
+        text-transform:uppercase;
+        color:var(--ink-dim)!important;
+    }
+
+    .exact-value-unit{
+        margin-top:.28rem;
+        text-align:center;
+        font-family:var(--font-mono);
+        font-size:.66rem;
+        color:var(--ink-soft)!important;
+    }
+
+    /* Make exact-value boxes easier to see and type into. */
+    div[data-testid="stNumberInput"]{
+        min-width:0!important;
+    }
+
+    div[data-testid="stNumberInput"] > div{
+        width:100%!important;
+    }
+
+    div[data-testid="stNumberInput"] input{
+        min-height:2.75rem!important;
+        padding:.55rem .42rem!important;
+        text-align:center!important;
+        font-family:var(--font-mono)!important;
+        font-size:.86rem!important;
+        font-weight:700!important;
+        color:var(--ink)!important;
+        -webkit-text-fill-color:var(--ink)!important;
+        background:#21160f!important;
+        border-radius:10px!important;
+    }
+
+    div[data-testid="stNumberInput"] button{
+        min-width:2rem!important;
+        width:2rem!important;
+        background:#2a1c13!important;
+        border-color:#3b291c!important;
+    }
+
+    div[data-testid="stNumberInput"] button svg{
+        fill:var(--ink)!important;
+        color:var(--ink)!important;
+    }
+
+    /* Give slider and exact box a balanced grid. */
+    .slider-control-note{
+        margin-top:.1rem;
+        margin-bottom:.55rem;
+        font-size:.69rem;
+        line-height:1.4;
+        color:var(--ink-dim)!important;
+    }
+
+    /* Make field descriptions less bulky. */
+    .field-note{
+        margin-top:-.1rem!important;
+        margin-bottom:.75rem!important;
+        padding:.46rem .6rem!important;
+        font-size:.73rem!important;
+    }
+
+    /* Slightly tighten the quick form section. */
+    .section-head{
+        margin:.25rem 0 .8rem!important;
+    }
+
+
 </style>
     """,
     unsafe_allow_html=True,
@@ -872,7 +963,7 @@ def slider_input(
     key: str,
     note: str,
 ) -> float:
-    """Render a synchronized slider and exact-value number input."""
+    """Render a synchronized slider and exact numeric input."""
     slider_key = f"{key}_slider"
     number_key = f"{key}_number"
 
@@ -882,11 +973,17 @@ def slider_input(
     if number_key not in st.session_state:
         st.session_state[number_key] = default
 
+    reference = PRIORITY_REFERENCE_BANDS[feature_name]
+    low = reference["low"]
+    high = reference["high"]
+    unit = reference["unit"]
+
     st.markdown(
-        f"**{label}**"
+        f'<div class="slider-field-title">{label}</div>',
+        unsafe_allow_html=True,
     )
 
-    slider_column, number_column = st.columns([3.2, 1])
+    slider_column, number_column = st.columns([3.6, 1.35], gap="small")
 
     with slider_column:
         st.slider(
@@ -902,6 +999,11 @@ def slider_input(
         )
 
     with number_column:
+        st.markdown(
+            '<div class="exact-value-label">Exact value</div>',
+            unsafe_allow_html=True,
+        )
+
         st.number_input(
             f"{label} exact value",
             min_value=minimum,
@@ -914,12 +1016,12 @@ def slider_input(
             args=(key, minimum, maximum),
         )
 
-    value = st.session_state[number_key]
+        st.markdown(
+            f'<div class="exact-value-unit">{unit}</div>',
+            unsafe_allow_html=True,
+        )
 
-    reference = PRIORITY_REFERENCE_BANDS[feature_name]
-    low = reference["low"]
-    high = reference["high"]
-    unit = reference["unit"]
+    value = st.session_state[number_key]
 
     width = max(high - low, 1.0)
     average_low = low - (0.20 * width)
@@ -942,6 +1044,11 @@ def slider_input(
             f'<span class="slider-status {status_class}">{status_text}</span>'
             '</div>'
         ),
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f'<div class="slider-control-note">Reference band: {low:g}–{high:g} {unit}</div>',
         unsafe_allow_html=True,
     )
 
@@ -1376,12 +1483,18 @@ if mode == "Quick Assessment":
                 <div class="kicker">Fast demonstration</div>
                 <div class="title">Enter five high-priority inputs</div>
                 <div class="copy">
-                    The other model inputs use reference defaults. This mode is
-                    faster, but less personalised than Full Assessment.
+                    This mode asks for the five strongest individual inputs.
+                    Remaining features still use reference defaults, so Full
+                    Assessment gives the most complete result.
                 </div>
             </div>
             """,
             unsafe_allow_html=True,
+        )
+
+        st.caption(
+            "Quick mode is for demonstration. Full Assessment is recommended "
+            "when actual screening values are available."
         )
 
         st.write("")
@@ -1470,26 +1583,6 @@ if mode == "Quick Assessment":
                     key="quick_height",
                 )
                 desc("Physical measurement with high model importance.")
-
-            st.markdown(
-                """
-                <div class="warn-box">
-                    The remaining model fields use generic reference defaults,
-                    not this person's actual measurements.
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            st.markdown(
-                """
-                <div class="info-box">
-                    Live prediction is active. The result updates automatically
-                    whenever you change a value.
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
 
         quick_values = REFERENCE_DEFAULTS.copy()
 
@@ -1824,16 +1917,6 @@ else:
                         horizontal=True,
                         key="full_tartar",
                     )
-
-            st.markdown(
-                """
-                <div class="info-box">
-                    Live prediction is active. The result updates automatically
-                    whenever you change a value.
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
 
         full_values = {
             "gender": gender,
