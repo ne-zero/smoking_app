@@ -2036,8 +2036,8 @@ if mode == "Quick Assessment":
             with personal_2:
                 height = number_field(
                     "Height in Centimetres",
-                    130,
-                    190,
+                    100,
+                    220,
                     165,
                     5,
                     key="quick_height",
@@ -2137,8 +2137,8 @@ else:
 
                     height = number_field(
                         "Height in Centimetres",
-                        130,
-                        190,
+                        100,
+                        220,
                         165,
                         5,
                         key="full_height",
