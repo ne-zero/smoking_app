@@ -1409,62 +1409,52 @@ def render_result_panel(result: dict | None, mode: str) -> None:
 
         if predicted_class == 1:
             st.markdown(
-                f"""
-                <div class="result-card is-smoker-card">
-                    <div class="result-status-pill is-smoker">Smoker — High Risk</div>
-                    <div class="kicker">Model prediction</div>
-                    <h3>Predicted class: smoker</h3>
-                    <p>
-                        The submitted values are more similar to records
-                        classified as smokers by the trained Random Forest.
-                    </p>
-                    <div class="result-score is-smoker">{score_pct:.1f}%</div>
-                    <div class="result-caption">model smoker score</div>
-
-                    <div class="risk-bar-wrap">
-                        <div class="risk-bar-track">
-                            <div class="risk-bar-tick"></div>
-                            <div class="risk-bar-tick-label">50%</div>
-                            <div class="risk-bar-thumb is-smoker"
-                                 style="left:{score_pct:.1f}%;"></div>
-                        </div>
-                        <div class="risk-bar-labels">
-                            <span>0% · Non-smoker</span>
-                            <span>100% · Smoker</span>
-                        </div>
-                    </div>
-                </div>
-                """,
+                f'<div class="result-card is-smoker-card">'
+                f'<div class="result-status-pill is-smoker">Smoker — High Risk</div>'
+                f'<div class="kicker">Model prediction</div>'
+                f'<h3>Predicted class: smoker</h3>'
+                f'<p>The submitted values are more similar to records '
+                f'classified as smokers by the trained Random Forest.</p>'
+                f'<div class="result-score is-smoker">{score_pct:.1f}%</div>'
+                f'<div class="result-caption">model smoker score</div>'
+                f'<div class="risk-bar-wrap">'
+                f'<div class="risk-bar-track">'
+                f'<div class="risk-bar-tick"></div>'
+                f'<div class="risk-bar-tick-label">50%</div>'
+                f'<div class="risk-bar-thumb is-smoker" '
+                f'style="left:{score_pct:.1f}%;"></div>'
+                f'</div>'
+                f'<div class="risk-bar-labels">'
+                f'<span>0% · Non-smoker</span>'
+                f'<span>100% · Smoker</span>'
+                f'</div>'
+                f'</div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
         else:
             st.markdown(
-                f"""
-                <div class="result-card is-nonsmoker-card">
-                    <div class="result-status-pill is-nonsmoker">Non-smoker — Low Risk</div>
-                    <div class="kicker">Model prediction</div>
-                    <h3>Predicted class: non-smoker</h3>
-                    <p>
-                        The submitted values are more similar to records
-                        classified as non-smokers by the trained Random Forest.
-                    </p>
-                    <div class="result-score is-nonsmoker">{score_pct:.1f}%</div>
-                    <div class="result-caption">model smoker score</div>
-
-                    <div class="risk-bar-wrap">
-                        <div class="risk-bar-track">
-                            <div class="risk-bar-tick"></div>
-                            <div class="risk-bar-tick-label">50%</div>
-                            <div class="risk-bar-thumb is-nonsmoker"
-                                 style="left:{score_pct:.1f}%;"></div>
-                        </div>
-                        <div class="risk-bar-labels">
-                            <span>0% · Non-smoker</span>
-                            <span>100% · Smoker</span>
-                        </div>
-                    </div>
-                </div>
-                """,
+                f'<div class="result-card is-nonsmoker-card">'
+                f'<div class="result-status-pill is-nonsmoker">Non-smoker — Low Risk</div>'
+                f'<div class="kicker">Model prediction</div>'
+                f'<h3>Predicted class: non-smoker</h3>'
+                f'<p>The submitted values are more similar to records '
+                f'classified as non-smokers by the trained Random Forest.</p>'
+                f'<div class="result-score is-nonsmoker">{score_pct:.1f}%</div>'
+                f'<div class="result-caption">model smoker score</div>'
+                f'<div class="risk-bar-wrap">'
+                f'<div class="risk-bar-track">'
+                f'<div class="risk-bar-tick"></div>'
+                f'<div class="risk-bar-tick-label">50%</div>'
+                f'<div class="risk-bar-thumb is-nonsmoker" '
+                f'style="left:{score_pct:.1f}%;"></div>'
+                f'</div>'
+                f'<div class="risk-bar-labels">'
+                f'<span>0% · Non-smoker</span>'
+                f'<span>100% · Smoker</span>'
+                f'</div>'
+                f'</div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
 
@@ -1516,8 +1506,24 @@ if "prediction_inputs" not in st.session_state:
 # =========================================================
 # IMPRESSIVE TOP SECTION
 # =========================================================
-components.html(
-    """
+def _build_signal_path(period_width: int = 140, periods: int = 8, baseline: int = 34) -> str:
+    """A repeating 'signal pulse' line, drawn twice-over (periods=8 covers
+    2x the visible 4-period window) so a -50% CSS translate loops seamlessly."""
+    segments = [f"M0,{baseline}"]
+    for i in range(periods):
+        x0 = i * period_width
+        segments.append(
+            f"L{x0+30},{baseline} "
+            f"L{x0+42},{baseline-20} "
+            f"L{x0+54},{baseline+26} "
+            f"L{x0+66},{baseline-6} "
+            f"L{x0+78},{baseline} "
+            f"L{x0+period_width},{baseline}"
+        )
+    return " ".join(segments)
+
+
+_hero_html = """
     <style>
         html, body {
             margin: 0;
@@ -1614,70 +1620,67 @@ components.html(
             text-transform: uppercase;
         }
 
-        .donut-wrap {
-            position: relative;
-            width: 210px;
-            height: 210px;
-            margin: 10px 0 4px;
+        .signal-strip {
+            width: 100%;
+            height: 46px;
+            margin: 12px 0 2px;
+            overflow: hidden;
+            -webkit-mask-image: linear-gradient(90deg,
+                transparent 0%, black 14%, black 86%, transparent 100%);
+            mask-image: linear-gradient(90deg,
+                transparent 0%, black 14%, black 86%, transparent 100%);
         }
 
-        .donut-wrap svg {
-            position: absolute;
-            inset: 0;
+        .signal-strip svg {
+            display: block;
             width: 100%;
             height: 100%;
         }
 
-        .donut-track {
-            stroke: #334155;
+        .signal-path {
+            fill: none;
+            stroke: #F97316;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 7px rgba(249,115,22,.8));
+            animation: signal-scroll 3.2s linear infinite;
         }
 
-        .donut-progress {
-            stroke-dasharray: 578.05;
-            stroke-dashoffset: 578.05;
-            animation: donut-fill 1.8s cubic-bezier(.16,.84,.44,1) 0.15s forwards;
-            filter: drop-shadow(0 0 10px rgba(249,115,22,.65));
+        @keyframes signal-scroll {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-50%); }
         }
 
-        @keyframes donut-fill {
-            from { stroke-dashoffset: 578.05; }
-            to   { stroke-dashoffset: 100.58; }
-        }
-
-        .donut-center {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .donut-value {
+        .stat-value {
             font-family: Consolas, monospace;
-            font-size: 52px;
+            font-size: 76px;
             font-weight: 700;
-            color: #F1F5F9;
             line-height: 1;
+            color: #F1F5F9;
+            letter-spacing: -.02em;
+            text-shadow: 0 0 30px rgba(249,115,22,.4);
         }
 
-        .donut-value span {
-            font-size: 26px;
+        .stat-percent {
+            font-size: 34px;
+            font-weight: 700;
             color: #F97316;
         }
 
-        .donut-caption {
-            margin-top: 6px;
+        .stat-caption {
+            margin-top: 10px;
             color: #94A3B8;
             font-family: Consolas, monospace;
             font-size: 11px;
             font-weight: 700;
-            letter-spacing: .1em;
+            letter-spacing: .14em;
             text-transform: uppercase;
         }
 
         .accuracy-sub {
             max-width: 240px;
+            margin-top: 6px;
             color: #94A3B8;
             font-size: 12.5px;
             line-height: 1.55;
@@ -1727,9 +1730,12 @@ components.html(
                 height: auto;
             }
 
-            .donut-wrap {
-                width: 170px;
-                height: 170px;
+            .stat-value {
+                font-size: 56px;
+            }
+
+            .stat-percent {
+                font-size: 26px;
             }
         }
     </style>
@@ -1758,29 +1764,15 @@ components.html(
             <div class="accuracy-card">
                 <div class="accuracy-eyebrow">Hero accuracy</div>
 
-                <div class="donut-wrap">
-                    <svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="accGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#F97316"/>
-                                <stop offset="100%" stop-color="#FDBA74"/>
-                            </linearGradient>
-                        </defs>
-
-                        <circle class="donut-track" cx="110" cy="110" r="92"
-                                fill="none" stroke-width="14"/>
-
-                        <circle class="donut-progress" cx="110" cy="110" r="92"
-                                fill="none" stroke="url(#accGrad)"
-                                stroke-width="14" stroke-linecap="round"
-                                transform="rotate(-90 110 110)"/>
+                <div class="signal-strip">
+                    <svg viewBox="0 0 560 60" preserveAspectRatio="none"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path class="signal-path" d="__SIGNAL_PATH__"/>
                     </svg>
-
-                    <div class="donut-center">
-                        <div class="donut-value">82.6<span>%</span></div>
-                        <div class="donut-caption">Model accuracy</div>
-                    </div>
                 </div>
+
+                <div class="stat-value" id="heroStatValue">0<span class="stat-percent">%</span></div>
+                <div class="stat-caption">Model accuracy</div>
 
                 <div class="accuracy-sub">
                     Tested on held-out validation data across 5-fold CV.
@@ -1810,7 +1802,32 @@ components.html(
             </div>
         </div>
     </section>
-    """,
+
+    <script>
+        (function () {
+            var el = document.getElementById('heroStatValue');
+            var target = 82.6;
+            var duration = 1600;
+            var start = null;
+
+            function step(timestamp) {
+                if (!start) { start = timestamp; }
+                var progress = Math.min((timestamp - start) / duration, 1);
+                var eased = 1 - Math.pow(1 - progress, 3);
+                var value = (target * eased).toFixed(1);
+                el.innerHTML = value + '<span class="stat-percent">%</span>';
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            }
+
+            window.requestAnimationFrame(step);
+        })();
+    </script>
+    """.replace("__SIGNAL_PATH__", _build_signal_path())
+
+components.html(
+    _hero_html,
     height=520,
     scrolling=False,
 )
