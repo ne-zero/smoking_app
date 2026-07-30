@@ -581,12 +581,83 @@ st.markdown(
         border:1px solid rgba(34,197,94,.35);
     }
 
+    /* Whole-card theme that dynamically reflects the predicted risk level */
+    .result-card.is-smoker-card{
+        border-color:rgba(239,68,68,.55)!important;
+        box-shadow:0 0 0 1px rgba(239,68,68,.12),0 0 32px rgba(239,68,68,.18);
+    }
+
+    .result-card.is-nonsmoker-card{
+        border-color:rgba(34,197,94,.55)!important;
+        box-shadow:0 0 0 1px rgba(34,197,94,.12),0 0 32px rgba(34,197,94,.18);
+    }
+
     .result-score{
         margin-top:1.15rem;
         font-family:var(--font-mono);
         font-size:2.85rem;
         font-weight:600;
         color:var(--ink)!important;
+    }
+
+    .result-score.is-smoker{color:var(--red)!important}
+    .result-score.is-nonsmoker{color:var(--green)!important}
+
+    /* ---------- linear risk bar: 0% (non-smoker) to 100% (smoker) ---------- */
+    .risk-bar-wrap{
+        margin-top:1.3rem;
+    }
+
+    .risk-bar-track{
+        position:relative;
+        height:10px;
+        border-radius:999px;
+        background:linear-gradient(90deg,
+            var(--green) 0%, var(--amber) 50%, var(--red) 100%);
+    }
+
+    .risk-bar-tick{
+        position:absolute;
+        top:-4px;
+        bottom:-4px;
+        left:50%;
+        width:2px;
+        background:rgba(241,245,249,.55);
+    }
+
+    .risk-bar-tick-label{
+        position:absolute;
+        top:14px;
+        left:50%;
+        transform:translateX(-50%);
+        font-family:var(--font-mono);
+        font-size:.6rem;
+        color:var(--ink-dim)!important;
+    }
+
+    .risk-bar-thumb{
+        position:absolute;
+        top:50%;
+        width:16px;
+        height:16px;
+        border-radius:50%;
+        background:#0F172A;
+        border:3px solid var(--ink);
+        transform:translate(-50%,-50%);
+        box-shadow:0 0 0 4px rgba(0,0,0,.28);
+    }
+
+    .risk-bar-thumb.is-smoker{border-color:var(--red)}
+    .risk-bar-thumb.is-nonsmoker{border-color:var(--green)}
+
+    .risk-bar-labels{
+        display:flex;
+        justify-content:space-between;
+        margin-top:1.4rem;
+        font-family:var(--font-mono);
+        font-size:.66rem;
+        letter-spacing:.03em;
+        color:var(--ink-soft)!important;
     }
 
     .result-caption{
@@ -774,6 +845,14 @@ st.markdown(
         margin-bottom:.35rem;
     }
 
+    /* Genuine clinical abbreviation shown in subtle parentheses next to
+       the full formal name — e.g. High-Density Lipoprotein (HDL). */
+    .field-card-abbr{
+        font-size:12px;
+        font-weight:500;
+        color:var(--ink-soft)!important;
+    }
+
     /* Status & reference row */
     .slider-status-row{
         display:flex;
@@ -842,18 +921,59 @@ PRIORITY_REFERENCE_BANDS = {
         "low": 8.0,
         "high": 61.0,
         "unit": "U/L",
+        "direction": "within",
     },
     "hemoglobin": {
         "low": 12.0,
         "high": 17.5,
         "unit": "g/dL",
+        "direction": "within",
     },
     "triglyceride": {
         "low": 8.0,
         "high": 149.0,
         "unit": "mg/dL",
+        "direction": "within",
     },
 }
+
+# Reference bands for additional numeric cards beyond the top-5 priority
+# features. "within" = normal is between low/high; "higher_better" = above
+# `high` is good, below `low` is bad (e.g. HDL); "lower_better" = below
+# `low` is good, above `high` is bad (e.g. LDL). Ranges are standard
+# clinical reference intervals for an educational prototype, not
+# individualized medical guidance.
+CLINICAL_BANDS = {
+    "fasting": {"low": 70.0, "high": 99.0, "unit": "mg/dL", "direction": "within"},
+    "cholesterol": {"low": 125.0, "high": 199.0, "unit": "mg/dL", "direction": "within"},
+    "hdl": {"low": 40.0, "high": 60.0, "unit": "mg/dL", "direction": "higher_better"},
+    "ldl": {"low": 99.0, "high": 159.0, "unit": "mg/dL", "direction": "lower_better"},
+    "creatinine": {"low": 0.6, "high": 1.3, "unit": "mg/dL", "direction": "within"},
+    "ast": {"low": 8.0, "high": 40.0, "unit": "U/L", "direction": "within"},
+    "alt": {"low": 7.0, "high": 56.0, "unit": "U/L", "direction": "within"},
+    "systolic": {"low": 90.0, "high": 119.0, "unit": "mmHg", "direction": "within"},
+    "relaxation": {"low": 60.0, "high": 79.0, "unit": "mmHg", "direction": "within"},
+}
+
+
+def bmi_weight_band(height_cm: float) -> dict:
+    """A healthy-weight range (BMI 18.5–24.9) for the given height, so the
+    weight card can show a status badge without a fixed universal cutoff."""
+    height_m = height_cm / 100.0
+    return {
+        "low": round(18.5 * height_m ** 2, 1),
+        "high": round(24.9 * height_m ** 2, 1),
+        "unit": "kg",
+        "direction": "within",
+    }
+
+
+def waist_band(gender: str) -> dict:
+    """Standard gender-specific waist circumference thresholds
+    (elevated cardiometabolic risk above the high cutoff)."""
+    if gender == "M":
+        return {"low": 93.9, "high": 101.9, "unit": "cm", "direction": "lower_better"}
+    return {"low": 79.9, "high": 87.9, "unit": "cm", "direction": "lower_better"}
 
 PRIORITY_FEATURES = {
     "gender",
@@ -908,13 +1028,71 @@ def binary(answer: str) -> int:
 
 
 def clean_label(label: str) -> tuple[str, str]:
-    """Split 'Field Name (dataset_var)' into a clean label plus the
-    parenthetical dataset variable, so the raw variable name can be
-    relegated to a tooltip instead of shown in the primary label."""
+    """Split 'Field Name (dataset_var)' into a clean label plus whatever
+    is in the trailing parentheses."""
     if "(" in label and label.endswith(")"):
         head, _, tail = label.rpartition("(")
         return head.strip(), tail[:-1].strip()
     return label, ""
+
+
+def _is_real_abbreviation(paren: str) -> bool:
+    """True only for genuine clinical abbreviations (HDL, AST, Gtp...),
+    not raw snake_case dataset variable names (fasting blood sugar,
+    gender, tartar...), so we don't surface internal plumbing to users."""
+    return (
+        bool(paren)
+        and " " not in paren
+        and paren[0].isupper()
+        and len(paren) <= 6
+    )
+
+
+def field_title_html(label: str, css_class: str) -> str:
+    """Card header markup: full formal name as the main title, with a
+    genuine abbreviation shown in subtle parentheses next to it."""
+    clean_name, paren = clean_label(label)
+
+    if _is_real_abbreviation(paren):
+        return (
+            f'<div class="{css_class}">{clean_name} '
+            f'<span class="field-card-abbr">({paren})</span></div>'
+        )
+
+    return f'<div class="{css_class}">{clean_name}</div>'
+
+
+def classify_status(value: float, band: dict) -> tuple[str, str]:
+    """Classify a value into Good/Average/Bad against a reference band,
+    honoring the band's direction (within-range, higher-is-better, or
+    lower-is-better)."""
+    low = band["low"]
+    high = band["high"]
+    direction = band.get("direction", "within")
+
+    if direction == "higher_better":
+        if value >= high:
+            return "Good", "slider-good"
+        if value >= low:
+            return "Average", "slider-average"
+        return "Bad", "slider-bad"
+
+    if direction == "lower_better":
+        if value <= low:
+            return "Good", "slider-good"
+        if value <= high:
+            return "Average", "slider-average"
+        return "Bad", "slider-bad"
+
+    width = max(high - low, 1.0)
+    average_low = low - (0.20 * width)
+    average_high = high + (0.20 * width)
+
+    if low <= value <= high:
+        return "Good", "slider-good"
+    if average_low <= value <= average_high:
+        return "Average", "slider-average"
+    return "Bad", "slider-bad"
 
 
 def format_value(value: float) -> str:
@@ -986,8 +1164,7 @@ def _sync_number_to_slider(
     )
 
 
-def slider_input(
-    feature_name: str,
+def clinical_field(
     label: str,
     minimum: float,
     maximum: float,
@@ -995,10 +1172,12 @@ def slider_input(
     step: float,
     key: str,
     note: str,
+    band: dict,
 ) -> float:
-    """Render one self-contained field card: header (clean label + single
-    editable value), a full-width slider, a reference/status row, and a
-    footer note — with only one place the numeric value is displayed."""
+    """Render one self-contained field card: header (full name + genuine
+    abbreviation + single editable value), a full-width slider, a
+    reference/status row, and a footer note — with only one place the
+    numeric value is displayed."""
     slider_key = f"{key}_slider"
     number_key = f"{key}_number"
 
@@ -1008,21 +1187,17 @@ def slider_input(
     if number_key not in st.session_state:
         st.session_state[number_key] = default
 
-    reference = PRIORITY_REFERENCE_BANDS[feature_name]
-    low = reference["low"]
-    high = reference["high"]
-    unit = reference["unit"]
-
-    clean_name, dataset_var = clean_label(label)
+    low = band["low"]
+    high = band["high"]
+    unit = band["unit"]
 
     with st.container(border=True, key=f"card_{key}"):
-        # ---- Header row: clean field name (left) + single value input (right)
+        # ---- Header row: full name + abbreviation (left) + single value input (right)
         header_label, header_input = st.columns([2, 1.1], gap="small")
 
         with header_label:
             st.markdown(
-                f'<div class="field-card-title" title="{dataset_var}">'
-                f'{clean_name}</div>',
+                field_title_html(label, "field-card-title"),
                 unsafe_allow_html=True,
             )
 
@@ -1054,27 +1229,21 @@ def slider_input(
         )
 
         value = st.session_state[number_key]
-
-        width = max(high - low, 1.0)
-        average_low = low - (0.20 * width)
-        average_high = high + (0.20 * width)
-
-        if low <= value <= high:
-            status_text = "Good"
-            status_class = "slider-good"
-        elif average_low <= value <= average_high:
-            status_text = "Average"
-            status_class = "slider-average"
-        else:
-            status_text = "Bad"
-            status_class = "slider-bad"
+        status_text, status_class = classify_status(value, band)
 
         # ---- Status & reference row
+        ref_text = (
+            f"Ref: ≥{format_value(high)} {unit}"
+            if band.get("direction") == "higher_better"
+            else f"Ref: ≤{format_value(high)} {unit}"
+            if band.get("direction") == "lower_better"
+            else f"Ref: {format_value(low)}–{format_value(high)} {unit}"
+        )
+
         st.markdown(
             (
                 '<div class="slider-status-row">'
-                f'<span class="slider-selected">'
-                f'Ref: {format_value(low)}–{format_value(high)} {unit}</span>'
+                f'<span class="slider-selected">{ref_text}</span>'
                 f'<span class="slider-status {status_class}">{status_text}</span>'
                 '</div>'
             ),
@@ -1087,6 +1256,29 @@ def slider_input(
     return value
 
 
+def slider_input(
+    feature_name: str,
+    label: str,
+    minimum: float,
+    maximum: float,
+    default: float,
+    step: float,
+    key: str,
+    note: str,
+) -> float:
+    """Backward-compatible wrapper for the 3 top-priority feature cards."""
+    return clinical_field(
+        label,
+        minimum,
+        maximum,
+        default,
+        step,
+        key,
+        note,
+        PRIORITY_REFERENCE_BANDS[feature_name],
+    )
+
+
 def number_field(
     label: str,
     minimum,
@@ -1097,12 +1289,9 @@ def number_field(
     note: str | None = None,
 ):
     """A single number input wrapped in its own field card."""
-    clean_name, dataset_var = clean_label(label)
-
     with st.container(border=True, key=f"fc_{key}"):
         st.markdown(
-            f'<div class="field-card-title-simple" title="{dataset_var}">'
-            f'{clean_name}</div>',
+            field_title_html(label, "field-card-title-simple"),
             unsafe_allow_html=True,
         )
 
@@ -1131,12 +1320,9 @@ def select_field(
     note: str | None = None,
 ):
     """A single selectbox wrapped in its own field card."""
-    clean_name, dataset_var = clean_label(label)
-
     with st.container(border=True, key=f"fc_{key}"):
         st.markdown(
-            f'<div class="field-card-title-simple" title="{dataset_var}">'
-            f'{clean_name}</div>',
+            field_title_html(label, "field-card-title-simple"),
             unsafe_allow_html=True,
         )
 
@@ -1164,12 +1350,9 @@ def radio_field(
     horizontal: bool = True,
 ):
     """A single radio control wrapped in its own field card."""
-    clean_name, dataset_var = clean_label(label)
-
     with st.container(border=True, key=f"fc_{key}"):
         st.markdown(
-            f'<div class="field-card-title-simple" title="{dataset_var}">'
-            f'{clean_name}</div>',
+            field_title_html(label, "field-card-title-simple"),
             unsafe_allow_html=True,
         )
 
@@ -1222,20 +1405,34 @@ def render_result_panel(result: dict | None, mode: str) -> None:
     else:
         predicted_class = result["class"]
         smoker_score = result["score"]
+        score_pct = smoker_score * 100
 
         if predicted_class == 1:
             st.markdown(
                 f"""
-                <div class="result-card">
-                    <div class="result-status-pill is-smoker">Smoker</div>
+                <div class="result-card is-smoker-card">
+                    <div class="result-status-pill is-smoker">Smoker — High Risk</div>
                     <div class="kicker">Model prediction</div>
                     <h3>Predicted class: smoker</h3>
                     <p>
                         The submitted values are more similar to records
                         classified as smokers by the trained Random Forest.
                     </p>
-                    <div class="result-score">{smoker_score * 100:.1f}%</div>
+                    <div class="result-score is-smoker">{score_pct:.1f}%</div>
                     <div class="result-caption">model smoker score</div>
+
+                    <div class="risk-bar-wrap">
+                        <div class="risk-bar-track">
+                            <div class="risk-bar-tick"></div>
+                            <div class="risk-bar-tick-label">50%</div>
+                            <div class="risk-bar-thumb is-smoker"
+                                 style="left:{score_pct:.1f}%;"></div>
+                        </div>
+                        <div class="risk-bar-labels">
+                            <span>0% · Non-smoker</span>
+                            <span>100% · Smoker</span>
+                        </div>
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -1243,22 +1440,35 @@ def render_result_panel(result: dict | None, mode: str) -> None:
         else:
             st.markdown(
                 f"""
-                <div class="result-card">
-                    <div class="result-status-pill is-nonsmoker">Non-smoker</div>
+                <div class="result-card is-nonsmoker-card">
+                    <div class="result-status-pill is-nonsmoker">Non-smoker — Low Risk</div>
                     <div class="kicker">Model prediction</div>
                     <h3>Predicted class: non-smoker</h3>
                     <p>
                         The submitted values are more similar to records
                         classified as non-smokers by the trained Random Forest.
                     </p>
-                    <div class="result-score">{smoker_score * 100:.1f}%</div>
+                    <div class="result-score is-nonsmoker">{score_pct:.1f}%</div>
                     <div class="result-caption">model smoker score</div>
+
+                    <div class="risk-bar-wrap">
+                        <div class="risk-bar-track">
+                            <div class="risk-bar-tick"></div>
+                            <div class="risk-bar-tick-label">50%</div>
+                            <div class="risk-bar-thumb is-nonsmoker"
+                                 style="left:{score_pct:.1f}%;"></div>
+                        </div>
+                        <div class="risk-bar-labels">
+                            <span>0% · Non-smoker</span>
+                            <span>100% · Smoker</span>
+                        </div>
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-        st.progress(smoker_score)
+        st.write("")
 
         if mode == "Quick Assessment":
             st.warning(
@@ -1326,7 +1536,7 @@ components.html(
         .grid {
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
+            align-items: stretch;
             gap: 32px;
         }
 
@@ -1378,24 +1588,99 @@ components.html(
             line-height: 1.7;
         }
 
-        .gauge {
-            width: 290px;
-            min-width: 250px;
+        .accuracy-card {
+            width: 300px;
+            min-width: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 28px 22px;
+            border-radius: 20px;
+            background: #1E293B;
+            border: 1px solid #334155;
+            height: 100%;
+            box-sizing: border-box;
             text-align: center;
         }
 
-        .gauge svg {
-            width: 100%;
+        .accuracy-eyebrow {
+            color: #F97316;
+            font-family: Consolas, monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
         }
 
-        .gauge-label {
-            margin-top: -2px;
+        .donut-wrap {
+            position: relative;
+            width: 210px;
+            height: 210px;
+            margin: 10px 0 4px;
+        }
+
+        .donut-wrap svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .donut-track {
+            stroke: #334155;
+        }
+
+        .donut-progress {
+            stroke-dasharray: 578.05;
+            stroke-dashoffset: 578.05;
+            animation: donut-fill 1.8s cubic-bezier(.16,.84,.44,1) 0.15s forwards;
+            filter: drop-shadow(0 0 10px rgba(249,115,22,.65));
+        }
+
+        @keyframes donut-fill {
+            from { stroke-dashoffset: 578.05; }
+            to   { stroke-dashoffset: 100.58; }
+        }
+
+        .donut-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .donut-value {
+            font-family: Consolas, monospace;
+            font-size: 52px;
+            font-weight: 700;
+            color: #F1F5F9;
+            line-height: 1;
+        }
+
+        .donut-value span {
+            font-size: 26px;
+            color: #F97316;
+        }
+
+        .donut-caption {
+            margin-top: 6px;
             color: #94A3B8;
             font-family: Consolas, monospace;
             font-size: 11px;
             font-weight: 700;
             letter-spacing: .1em;
             text-transform: uppercase;
+        }
+
+        .accuracy-sub {
+            max-width: 240px;
+            color: #94A3B8;
+            font-size: 12.5px;
+            line-height: 1.55;
         }
 
         .meta {
@@ -1436,9 +1721,15 @@ components.html(
                 align-items: flex-start;
             }
 
-            .gauge {
-                width: 220px;
-                min-width: 220px;
+            .accuracy-card {
+                width: 100%;
+                min-width: 0;
+                height: auto;
+            }
+
+            .donut-wrap {
+                width: 170px;
+                height: 170px;
             }
         }
     </style>
@@ -1464,36 +1755,36 @@ components.html(
                 </p>
             </div>
 
-            <div class="gauge">
-                <svg viewBox="0 0 300 165" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20,150 A130,130 0 0,1 280,150"
-                          fill="none"
-                          stroke="#334155"
-                          stroke-width="3"
-                          stroke-linecap="round"/>
+            <div class="accuracy-card">
+                <div class="accuracy-eyebrow">Hero accuracy</div>
 
-                    <path d="M20,150 A130,130 0 0,1 261,83"
-                          fill="none"
-                          stroke="#F97316"
-                          stroke-width="3"
-                          stroke-linecap="round"/>
+                <div class="donut-wrap">
+                    <svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="accGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#F97316"/>
+                                <stop offset="100%" stop-color="#FDBA74"/>
+                            </linearGradient>
+                        </defs>
 
-                    <circle cx="261" cy="83" r="8"
-                            fill="#0F172A"
-                            stroke="#F97316"
-                            stroke-width="3"/>
+                        <circle class="donut-track" cx="110" cy="110" r="92"
+                                fill="none" stroke-width="14"/>
 
-                    <text x="150" y="122"
-                          text-anchor="middle"
-                          font-family="Consolas, monospace"
-                          font-size="36"
-                          font-weight="700"
-                          fill="#F1F5F9">
-                        82.6%
-                    </text>
-                </svg>
+                        <circle class="donut-progress" cx="110" cy="110" r="92"
+                                fill="none" stroke="url(#accGrad)"
+                                stroke-width="14" stroke-linecap="round"
+                                transform="rotate(-90 110 110)"/>
+                    </svg>
 
-                <div class="gauge-label">Held-out test accuracy</div>
+                    <div class="donut-center">
+                        <div class="donut-value">82.6<span>%</span></div>
+                        <div class="donut-caption">Model accuracy</div>
+                    </div>
+                </div>
+
+                <div class="accuracy-sub">
+                    Tested on held-out validation data across 5-fold CV.
+                </div>
             </div>
         </div>
 
@@ -1520,7 +1811,7 @@ components.html(
         </div>
     </section>
     """,
-    height=475,
+    height=520,
     scrolling=False,
 )
 
@@ -1710,7 +2001,7 @@ if mode == "Quick Assessment":
 
             with personal_2:
                 height = number_field(
-                    "Height in centimetres (height(cm))",
+                    "Height in Centimetres",
                     130,
                     190,
                     165,
@@ -1810,7 +2101,7 @@ else:
                     )
 
                     height = number_field(
-                        "Height in centimetres (height(cm))",
+                        "Height in Centimetres",
                         130,
                         190,
                         165,
@@ -1868,27 +2159,32 @@ else:
                 screening_1, screening_2, screening_3 = st.columns(3)
 
                 with screening_1:
-                    weight = number_field(
-                        "Weight in kilograms (weight(kg))",
-                        30,
-                        135,
-                        65,
-                        5,
-                        key="full_weight",
+                    weight = clinical_field(
+                        "Weight in Kilograms",
+                        30.0,
+                        135.0,
+                        65.0,
+                        5.0,
+                        "full_weight",
+                        "Healthy range shown is based on your entered height.",
+                        bmi_weight_band(height),
                     )
 
-                    waist = number_field(
-                        "Waist circumference (waist(cm))",
+                    waist = clinical_field(
+                        "Waist Circumference",
                         51.0,
                         129.0,
                         82.0,
                         0.5,
-                        key="full_waist",
+                        "full_waist",
+                        "Threshold shown reflects standard cardiometabolic "
+                        "risk guidance for your selected gender.",
+                        waist_band(gender),
                     )
 
                 with screening_2:
                     eyesight_left = number_field(
-                        "Left-eye eyesight score (eyesight(left))",
+                        "Left-Eye Eyesight Score",
                         0.1,
                         9.9,
                         1.0,
@@ -1897,7 +2193,7 @@ else:
                     )
 
                     eyesight_right = number_field(
-                        "Right-eye eyesight score (eyesight(right))",
+                        "Right-Eye Eyesight Score",
                         0.1,
                         9.9,
                         1.0,
@@ -1905,8 +2201,36 @@ else:
                         key="full_eyesight_right",
                     )
 
+                with screening_3:
+                    systolic = clinical_field(
+                        "Systolic Pressure (systolic)",
+                        71.0,
+                        240.0,
+                        120.0,
+                        1.0,
+                        "full_systolic",
+                        "Pressure in the arteries during a heartbeat.",
+                        CLINICAL_BANDS["systolic"],
+                    )
+
+                    relaxation = clinical_field(
+                        "Diastolic Pressure (relaxation)",
+                        40.0,
+                        146.0,
+                        76.0,
+                        1.0,
+                        "full_relaxation",
+                        "Pressure in the arteries between heartbeats.",
+                        CLINICAL_BANDS["relaxation"],
+                    )
+
+                st.write("")
+
+                hearing_left_col, hearing_right_col = st.columns(2)
+
+                with hearing_left_col:
                     hearing_left = select_field(
-                        "Left-ear hearing (hearing(left))",
+                        "Left-Ear Hearing",
                         [1.0, 2.0],
                         format_func=lambda value: (
                             "1 — Normal"
@@ -1916,8 +2240,9 @@ else:
                         key="full_hearing_left",
                     )
 
+                with hearing_right_col:
                     hearing_right = select_field(
-                        "Right-ear hearing (hearing(right))",
+                        "Right-Ear Hearing",
                         [1.0, 2.0],
                         format_func=lambda value: (
                             "1 — Normal"
@@ -1927,97 +2252,92 @@ else:
                         key="full_hearing_right",
                     )
 
-                with screening_3:
-                    systolic = number_field(
-                        "Systolic pressure (systolic)",
-                        71.0,
-                        240.0,
-                        120.0,
-                        1.0,
-                        key="full_systolic",
-                    )
-
-                    relaxation = number_field(
-                        "Diastolic pressure (relaxation)",
-                        40.0,
-                        146.0,
-                        76.0,
-                        1.0,
-                        key="full_relaxation",
-                    )
-
             with blood_tab:
                 blood_1, blood_2, blood_3 = st.columns(3)
 
                 with blood_1:
-                    fasting = number_field(
-                        "Fasting blood glucose (fasting blood sugar)",
+                    fasting = clinical_field(
+                        "Fasting Blood Glucose",
                         46.0,
                         505.0,
                         96.0,
                         1.0,
-                        key="full_fasting",
+                        "full_fasting",
+                        "Blood sugar level after a period without eating.",
+                        CLINICAL_BANDS["fasting"],
                     )
 
-                    cholesterol = number_field(
-                        "Total cholesterol (Cholesterol)",
+                    cholesterol = clinical_field(
+                        "Total Cholesterol",
                         55.0,
                         445.0,
                         195.0,
                         1.0,
-                        key="full_cholesterol",
+                        "full_cholesterol",
+                        "Combined measurement of blood cholesterol.",
+                        CLINICAL_BANDS["cholesterol"],
                     )
 
-                    hdl = number_field(
-                        "HDL (HDL)",
+                    hdl = clinical_field(
+                        "High-Density Lipoprotein (HDL)",
                         4.0,
                         618.0,
                         55.0,
                         1.0,
-                        key="full_hdl",
+                        "full_hdl",
+                        "\"Good\" cholesterol — higher values are better.",
+                        CLINICAL_BANDS["hdl"],
                     )
 
-                    ldl = number_field(
-                        "LDL (LDL)",
+                    ldl = clinical_field(
+                        "Low-Density Lipoprotein (LDL)",
                         1.0,
                         1860.0,
                         113.0,
                         1.0,
-                        key="full_ldl",
+                        "full_ldl",
+                        "\"Bad\" cholesterol — lower values are better.",
+                        CLINICAL_BANDS["ldl"],
                     )
 
                 with blood_2:
                     urine = select_field(
-                        "Urine protein category (Urine protein)",
+                        "Urine Protein Category",
                         [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
                         key="full_urine",
                     )
 
-                    creatinine = number_field(
-                        "Serum creatinine (serum creatinine)",
+                    creatinine = clinical_field(
+                        "Serum Creatinine",
                         0.1,
                         11.6,
                         0.9,
                         0.1,
-                        key="full_creatinine",
+                        "full_creatinine",
+                        "Waste product filtered by the kidneys.",
+                        CLINICAL_BANDS["creatinine"],
                     )
 
-                    ast = number_field(
-                        "AST (AST)",
+                    ast = clinical_field(
+                        "Aspartate Aminotransferase (AST)",
                         6.0,
                         1311.0,
                         23.0,
                         1.0,
-                        key="full_ast",
+                        "full_ast",
+                        "Liver enzyme released when liver cells are damaged.",
+                        CLINICAL_BANDS["ast"],
                     )
 
-                    alt = number_field(
-                        "ALT (ALT)",
+                    alt = clinical_field(
+                        "Alanine Aminotransferase (ALT)",
                         1.0,
                         2914.0,
                         21.0,
                         1.0,
-                        key="full_alt",
+                        "full_alt",
+                        "Liver enzyme used to screen for liver damage.",
+                        CLINICAL_BANDS["alt"],
                     )
 
                 with blood_3:
