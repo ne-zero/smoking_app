@@ -320,11 +320,23 @@ st.markdown(
     }
 
     /* ---------- mode selector ---------- */
+    /* Plain text label — the field label lives in stWidgetLabel, not one of the option <label> elements below. */
+    div[data-testid="stRadio"] div[data-testid="stWidgetLabel"]{
+        margin-bottom:.5rem;
+    }
+
+    div[data-testid="stRadio"] div[data-testid="stWidgetLabel"] p{
+        color:var(--ink-soft)!important;
+        font-size:.85rem!important;
+        font-weight:600!important;
+    }
+
     div[data-testid="stRadio"] div[role="radiogroup"]{
         gap:.55rem;
     }
 
-    div[data-testid="stRadio"] label{
+    /* Segmented-control pills — selection shown via fill/border, so the native radio dot is hidden below to avoid a doubled-up indicator. */
+    div[data-testid="stRadio"] div[role="radiogroup"] label{
         background:var(--card);
         border:1px solid var(--line);
         border-radius:999px;
@@ -332,9 +344,13 @@ st.markdown(
         margin:0!important;
     }
 
-    div[data-testid="stRadio"] label:has(input:checked){
+    div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked){
         background:var(--ember-soft);
         border-color:rgba(255,122,61,.45);
+    }
+
+    div[data-testid="stRadio"] div[role="radiogroup"] label div[data-baseweb="radio"]{
+        display:none;
     }
 
     div[role="radiogroup"] label,
