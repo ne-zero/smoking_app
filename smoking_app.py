@@ -32,26 +32,35 @@ st.markdown(
         --font-mono: "SF Mono", "Cascadia Code", Consolas,
                      "Liberation Mono", Menlo, monospace;
 
-        --bg:#100c09;
-        --bg-deep:#0b0806;
-        --bg-soft:#170f09;
-        --card:#150f0a;
-        --card-2:#1a130c;
-        --ink:#f3ede4;
-        --ink-soft:#b5aa9d;
-        --ink-dim:#7d7264;
-        --line:#2a2019;
-        --line-soft:#1f170f;
+        --bg:#0F172A;
+        --bg-deep:#0B1120;
+        --bg-soft:#131D33;
+        --card:#1E293B;
+        --card-2:#1E293B;
+        --card-border:#334155;
+        --ink:#F1F5F9;
+        --ink-soft:#94A3B8;
+        --ink-dim:#64748B;
+        --line:#334155;
+        --line-soft:#243044;
 
-        --ember:#ff7a3d;
-        --ember-deep:#c9501a;
-        --ember-soft:rgba(255,122,61,.14);
-        --green:#67d695;
-        --green-soft:rgba(103,214,149,.14);
-        --red:#ff5967;
-        --red-soft:rgba(255,89,103,.14);
-        --amber:#ffbf4d;
-        --amber-soft:rgba(255,191,77,.14);
+        /* single consistent accent for active controls / tab headers */
+        --accent:#F97316;
+        --accent-deep:#C2570A;
+        --accent-soft:rgba(249,115,22,.14);
+
+        /* semantic red — reserved strictly for critical/BAD states */
+        --red:#EF4444;
+        --red-soft:rgba(239,68,68,.14);
+        --green:#22C55E;
+        --green-soft:rgba(34,197,94,.14);
+        --amber:#F59E0B;
+        --amber-soft:rgba(245,158,11,.14);
+
+        /* kept as aliases so existing rules below don't need renaming */
+        --ember:var(--accent);
+        --ember-deep:var(--accent-deep);
+        --ember-soft:var(--accent-soft);
     }
 
     html{color-scheme:dark!important}
@@ -61,14 +70,7 @@ st.markdown(
     }
 
     .stApp{
-        background:
-            radial-gradient(circle at 12% -8%,
-                rgba(255,122,61,.20), transparent 31rem),
-            radial-gradient(circle at 93% 3%,
-                rgba(255,174,99,.10), transparent 24rem),
-            radial-gradient(circle at 50% 45%,
-                rgba(255,255,255,.025), transparent 34rem),
-            linear-gradient(180deg,#0d0907 0%,#120c08 48%,#0d0907 100%);
+        background:var(--bg);
         color:var(--ink)!important;
     }
 
@@ -253,15 +255,11 @@ st.markdown(
 
     /* ---------- reusable cards ---------- */
     .card{
-        background:
-            linear-gradient(145deg,rgba(28,18,11,.98),rgba(19,13,9,.98));
-        border:1px solid rgba(255,122,61,.12);
-        border-radius:20px;
+        background:var(--card);
+        border:1px solid var(--card-border);
+        border-radius:12px;
         padding:1.25rem 1.4rem;
         min-height:125px;
-        box-shadow:
-            0 18px 45px rgba(0,0,0,.22),
-            inset 0 1px 0 rgba(255,255,255,.025);
     }
 
     .kicker{
@@ -345,14 +343,10 @@ st.markdown(
 
     /* ---------- form shell ---------- */
     div[data-testid="stVerticalBlockBorderWrapper"]{
-        background:
-            linear-gradient(145deg,rgba(25,16,10,.99),rgba(16,11,8,.99));
-        border:1px solid rgba(255,122,61,.16)!important;
-        border-radius:24px!important;
+        background:var(--bg-soft);
+        border:1px solid var(--card-border)!important;
+        border-radius:12px!important;
         padding:.45rem;
-        box-shadow:
-            0 22px 56px rgba(0,0,0,.26),
-            inset 0 1px 0 rgba(255,255,255,.025);
     }
 
     div[data-testid="stVerticalBlockBorderWrapper"]
@@ -421,7 +415,7 @@ st.markdown(
         padding:.85rem 1rem;
         border-radius:14px;
         background:var(--ember-soft);
-        border:1px solid rgba(255,122,61,.3);
+        border:1px solid rgba(249,115,22,.3);
         color:var(--ember)!important;
         font-size:.88rem;
         line-height:1.55;
@@ -432,7 +426,7 @@ st.markdown(
         padding:.85rem 1rem;
         border-radius:14px;
         background:var(--amber-soft);
-        border:1px solid rgba(255,191,77,.35);
+        border:1px solid rgba(245,158,11,.35);
         color:var(--amber)!important;
         font-size:.88rem;
         line-height:1.55;
@@ -520,9 +514,9 @@ st.markdown(
     .result-placeholder{
         min-height:300px;
         padding:1.5rem;
-        border:1px dashed #3b2a1f;
-        border-radius:22px;
-        background:rgba(21,15,10,.82);
+        border:1px dashed var(--card-border);
+        border-radius:12px;
+        background:var(--card);
         display:flex;
         flex-direction:column;
         justify-content:center;
@@ -543,8 +537,9 @@ st.markdown(
     .result-card{
         min-height:300px;
         padding:1.55rem;
-        border:1px solid;
-        border-radius:22px;
+        border:1px solid var(--card-border);
+        border-radius:12px;
+        background:var(--card);
     }
 
     .result-card h3{
@@ -558,14 +553,32 @@ st.markdown(
         color:var(--ink-soft)!important;
     }
 
-    .result-smoker{
-        background:var(--red-soft);
-        border-color:rgba(255,89,103,.38);
+    /* Status pill communicates smoker/non-smoker instead of a full-card
+       colored background — keeps solid red reserved for critical states. */
+    .result-status-pill{
+        display:inline-flex;
+        align-items:center;
+        gap:.4rem;
+        padding:.3rem .7rem;
+        border-radius:999px;
+        font-family:var(--font-mono);
+        font-size:.68rem;
+        font-weight:700;
+        letter-spacing:.05em;
+        text-transform:uppercase;
+        margin-bottom:.6rem;
     }
 
-    .result-nonsmoker{
+    .result-status-pill.is-smoker{
+        color:var(--red)!important;
+        background:var(--red-soft);
+        border:1px solid rgba(239,68,68,.35);
+    }
+
+    .result-status-pill.is-nonsmoker{
+        color:var(--green)!important;
         background:var(--green-soft);
-        border-color:rgba(103,214,149,.38);
+        border:1px solid rgba(34,197,94,.35);
     }
 
     .result-score{
@@ -639,106 +652,48 @@ st.markdown(
     }
 
     .slider-good{
-        color:#6bd596!important;
-        background:rgba(107,213,150,.14);
-        border:1px solid rgba(107,213,150,.34);
+        color:var(--green)!important;
+        background:var(--green-soft);
+        border:1px solid rgba(34,197,94,.34);
     }
 
     .slider-average{
-        color:#ffbf4d!important;
-        background:rgba(255,191,77,.14);
-        border:1px solid rgba(255,191,77,.34);
+        color:var(--amber)!important;
+        background:var(--amber-soft);
+        border:1px solid rgba(245,158,11,.34);
     }
 
     .slider-bad{
-        color:#ff5967!important;
-        background:rgba(255,89,103,.14);
-        border:1px solid rgba(255,89,103,.34);
+        color:var(--red)!important;
+        background:var(--red-soft);
+        border:1px solid rgba(239,68,68,.34);
     }
 
     div[data-testid="stSlider"] [data-testid*="TickBar" i]{
         display:none!important;
     }
 
-    .st-key-quick_gtp div[data-baseweb="slider"] > div:first-child,
-    .st-key-full_gtp div[data-baseweb="slider"] > div:first-child{
-        background:linear-gradient(
-            90deg,
-            #ffbf4d 0%,
-            #ffbf4d 7%,
-            #6bd596 7%,
-            #6bd596 18%,
-            #ff5967 18%,
-            #ff5967 100%
-        )!important;
+    /* One consistent accent color for every slider track/thumb — status
+       is communicated by the pill badge below the slider, not track color. */
+    div[data-testid="stSlider"] div[data-baseweb="slider"] > div:first-child{
+        background:var(--line)!important;
     }
 
-    .st-key-quick_hemoglobin div[data-baseweb="slider"] > div:first-child,
-    .st-key-full_hemoglobin div[data-baseweb="slider"] > div:first-child{
-        background:linear-gradient(
-            90deg,
-            #ff5967 0%,
-            #ff5967 32%,
-            #ffbf4d 32%,
-            #ffbf4d 44%,
-            #6bd596 44%,
-            #6bd596 78%,
-            #ffbf4d 78%,
-            #ffbf4d 88%,
-            #ff5967 88%,
-            #ff5967 100%
-        )!important;
+    div[data-testid="stSlider"] div[data-baseweb="slider"] > div:nth-child(2){
+        background:var(--accent)!important;
     }
 
-    .st-key-quick_triglyceride div[data-baseweb="slider"] > div:first-child,
-    .st-key-full_triglyceride div[data-baseweb="slider"] > div:first-child{
-        background:linear-gradient(
-            90deg,
-            #6bd596 0%,
-            #6bd596 15%,
-            #ffbf4d 15%,
-            #ffbf4d 20%,
-            #ff5967 20%,
-            #ff5967 100%
-        )!important;
+    div[data-testid="stSlider"] div[role="slider"]{
+        background:var(--accent)!important;
+        border-color:var(--accent)!important;
+        box-shadow:0 0 0 4px var(--accent-soft)!important;
     }
 
 
 
     /* =====================================================
-       REFINED SLIDER + NUMBER INPUT
+       SINGLE NUMBER INPUT (the one editable value per card)
        ===================================================== */
-    .slider-field-wrap{
-        margin-bottom:.35rem;
-    }
-
-    .slider-field-title{
-        margin-bottom:.45rem;
-        color:var(--ink)!important;
-        font-size:.9rem;
-        font-weight:600;
-        line-height:1.35;
-    }
-
-    .exact-value-label{
-        margin-bottom:.3rem;
-        font-family:var(--font-mono);
-        font-size:.62rem;
-        font-weight:700;
-        letter-spacing:.06em;
-        text-transform:uppercase;
-        color:var(--ink-dim)!important;
-    }
-
-    .exact-value-unit{
-        margin-top:.28rem;
-        text-align:center;
-        font-family:var(--font-mono);
-        font-size:.66rem;
-        color:var(--ink-soft)!important;
-    }
-
-    /* Make exact-value boxes easier to see and type into. */
     div[data-testid="stNumberInput"]{
         min-width:0!important;
     }
@@ -748,37 +703,29 @@ st.markdown(
     }
 
     div[data-testid="stNumberInput"] input{
-        min-height:2.75rem!important;
-        padding:.55rem .42rem!important;
+        min-height:2.3rem!important;
+        padding:.45rem .4rem!important;
         text-align:center!important;
         font-family:var(--font-mono)!important;
         font-size:.86rem!important;
         font-weight:700!important;
         color:var(--ink)!important;
         -webkit-text-fill-color:var(--ink)!important;
-        background:#21160f!important;
-        border-radius:10px!important;
+        background:var(--bg-deep)!important;
+        border:1px solid var(--card-border)!important;
+        border-radius:8px!important;
     }
 
     div[data-testid="stNumberInput"] button{
         min-width:2rem!important;
         width:2rem!important;
-        background:#2a1c13!important;
-        border-color:#3b291c!important;
+        background:var(--bg-deep)!important;
+        border-color:var(--card-border)!important;
     }
 
     div[data-testid="stNumberInput"] button svg{
         fill:var(--ink)!important;
         color:var(--ink)!important;
-    }
-
-    /* Give slider and exact box a balanced grid. */
-    .slider-control-note{
-        margin-top:.1rem;
-        margin-bottom:.55rem;
-        font-size:.69rem;
-        line-height:1.4;
-        color:var(--ink-dim)!important;
     }
 
     /* Make field descriptions less bulky. */
@@ -794,6 +741,64 @@ st.markdown(
         margin:.25rem 0 .8rem!important;
     }
 
+    /* =====================================================
+       FIELD CARDS — one self-contained card per input
+       ===================================================== */
+    div[class*="st-key-card_"],
+    div[class*="st-key-fc_"]{
+        background:#1E293B!important;
+        border:1px solid #334155!important;
+        border-radius:8px!important;
+        padding:16px!important;
+        box-shadow:none!important;
+    }
+
+    div[class*="st-key-card_"] div[data-testid="stVerticalBlock"],
+    div[class*="st-key-fc_"] div[data-testid="stVerticalBlock"]{
+        gap:.5rem;
+    }
+
+    .field-card-title{
+        font-size:14px;
+        font-weight:700;
+        color:#ffffff!important;
+        line-height:1.3;
+        padding-top:.35rem;
+    }
+
+    .field-card-title-simple{
+        font-size:14px;
+        font-weight:700;
+        color:#ffffff!important;
+        line-height:1.3;
+        margin-bottom:.35rem;
+    }
+
+    /* Status & reference row */
+    .slider-status-row{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:.5rem;
+        margin:.3rem 0 0;
+    }
+
+    .slider-selected{
+        font-family:var(--font-mono);
+        font-size:12px;
+        color:var(--ink-soft)!important;
+    }
+
+    /* Footer note inside a field card */
+    div[class*="st-key-card_"] .field-note,
+    div[class*="st-key-fc_"] .field-note{
+        margin-top:.4rem!important;
+        margin-bottom:0!important;
+        padding:8px 0 0!important;
+        border:none!important;
+        background:transparent!important;
+        font-size:12px!important;
+    }
 
 </style>
     """,
@@ -902,6 +907,34 @@ def binary(answer: str) -> int:
     return 1 if answer == "Yes" else 0
 
 
+def clean_label(label: str) -> tuple[str, str]:
+    """Split 'Field Name (dataset_var)' into a clean label plus the
+    parenthetical dataset variable, so the raw variable name can be
+    relegated to a tooltip instead of shown in the primary label."""
+    if "(" in label and label.endswith(")"):
+        head, _, tail = label.rpartition("(")
+        return head.strip(), tail[:-1].strip()
+    return label, ""
+
+
+def format_value(value: float) -> str:
+    """Render a number without a trailing decimal point or padding zero
+    (e.g. 999 instead of 999.00, 21.1 instead of 21.10)."""
+    text = f"{value:g}"
+    return text
+
+
+def step_format(step, value):
+    """Pick a number_input display format from the step size so values
+    show only the precision they need (999, not 999.00 or 999.). Returns
+    None for plain int widgets, since Streamlit already renders those
+    cleanly; float widgets get an explicit f-style format (Streamlit
+    rejects %d on float-typed inputs)."""
+    if isinstance(value, int) and isinstance(step, int):
+        return None
+    return "%.0f" if float(step).is_integer() else "%.1f"
+
+
 def encode(values: dict) -> pd.DataFrame:
     frame = pd.DataFrame([values])
 
@@ -963,7 +996,9 @@ def slider_input(
     key: str,
     note: str,
 ) -> float:
-    """Render a synchronized slider and exact numeric input."""
+    """Render one self-contained field card: header (clean label + single
+    editable value), a full-width slider, a reference/status row, and a
+    footer note — with only one place the numeric value is displayed."""
     slider_key = f"{key}_slider"
     number_key = f"{key}_number"
 
@@ -978,14 +1013,34 @@ def slider_input(
     high = reference["high"]
     unit = reference["unit"]
 
-    st.markdown(
-        f'<div class="slider-field-title">{label}</div>',
-        unsafe_allow_html=True,
-    )
+    clean_name, dataset_var = clean_label(label)
 
-    slider_column, number_column = st.columns([3.6, 1.35], gap="small")
+    with st.container(border=True, key=f"card_{key}"):
+        # ---- Header row: clean field name (left) + single value input (right)
+        header_label, header_input = st.columns([2, 1.1], gap="small")
 
-    with slider_column:
+        with header_label:
+            st.markdown(
+                f'<div class="field-card-title" title="{dataset_var}">'
+                f'{clean_name}</div>',
+                unsafe_allow_html=True,
+            )
+
+        with header_input:
+            st.number_input(
+                f"{label} exact value",
+                min_value=minimum,
+                max_value=maximum,
+                value=st.session_state[number_key],
+                step=step,
+                key=number_key,
+                format=step_format(step, st.session_state[number_key]),
+                label_visibility="collapsed",
+                on_change=_sync_number_to_slider,
+                args=(key, minimum, maximum),
+            )
+
+        # ---- Slider row: full width, no overlaid text
         st.slider(
             label,
             min_value=minimum,
@@ -998,62 +1053,140 @@ def slider_input(
             args=(key,),
         )
 
-    with number_column:
+        value = st.session_state[number_key]
+
+        width = max(high - low, 1.0)
+        average_low = low - (0.20 * width)
+        average_high = high + (0.20 * width)
+
+        if low <= value <= high:
+            status_text = "Good"
+            status_class = "slider-good"
+        elif average_low <= value <= average_high:
+            status_text = "Average"
+            status_class = "slider-average"
+        else:
+            status_text = "Bad"
+            status_class = "slider-bad"
+
+        # ---- Status & reference row
         st.markdown(
-            '<div class="exact-value-label">Exact value</div>',
+            (
+                '<div class="slider-status-row">'
+                f'<span class="slider-selected">'
+                f'Ref: {format_value(low)}–{format_value(high)} {unit}</span>'
+                f'<span class="slider-status {status_class}">{status_text}</span>'
+                '</div>'
+            ),
             unsafe_allow_html=True,
         )
 
-        st.number_input(
-            f"{label} exact value",
+        # ---- Footer: secondary description
+        desc(note)
+
+    return value
+
+
+def number_field(
+    label: str,
+    minimum,
+    maximum,
+    value,
+    step,
+    key: str,
+    note: str | None = None,
+):
+    """A single number input wrapped in its own field card."""
+    clean_name, dataset_var = clean_label(label)
+
+    with st.container(border=True, key=f"fc_{key}"):
+        st.markdown(
+            f'<div class="field-card-title-simple" title="{dataset_var}">'
+            f'{clean_name}</div>',
+            unsafe_allow_html=True,
+        )
+
+        result = st.number_input(
+            label,
             min_value=minimum,
             max_value=maximum,
-            value=st.session_state[number_key],
+            value=value,
             step=step,
-            key=number_key,
+            key=key,
+            format=step_format(step, value),
             label_visibility="collapsed",
-            on_change=_sync_number_to_slider,
-            args=(key, minimum, maximum),
         )
 
+        if note:
+            desc(note)
+
+    return result
+
+
+def select_field(
+    label: str,
+    options,
+    key: str,
+    format_func=None,
+    note: str | None = None,
+):
+    """A single selectbox wrapped in its own field card."""
+    clean_name, dataset_var = clean_label(label)
+
+    with st.container(border=True, key=f"fc_{key}"):
         st.markdown(
-            f'<div class="exact-value-unit">{unit}</div>',
+            f'<div class="field-card-title-simple" title="{dataset_var}">'
+            f'{clean_name}</div>',
             unsafe_allow_html=True,
         )
 
-    value = st.session_state[number_key]
+        kwargs = {} if format_func is None else {"format_func": format_func}
+        result = st.selectbox(
+            label,
+            options,
+            key=key,
+            label_visibility="collapsed",
+            **kwargs,
+        )
 
-    width = max(high - low, 1.0)
-    average_low = low - (0.20 * width)
-    average_high = high + (0.20 * width)
+        if note:
+            desc(note)
 
-    if low <= value <= high:
-        status_text = "Good"
-        status_class = "slider-good"
-    elif average_low <= value <= average_high:
-        status_text = "Average"
-        status_class = "slider-average"
-    else:
-        status_text = "Bad"
-        status_class = "slider-bad"
+    return result
 
-    st.markdown(
-        (
-            '<div class="slider-status-row">'
-            f'<span class="slider-selected">{value:g} {unit}</span>'
-            f'<span class="slider-status {status_class}">{status_text}</span>'
-            '</div>'
-        ),
-        unsafe_allow_html=True,
-    )
 
-    st.markdown(
-        f'<div class="slider-control-note">Reference band: {low:g}–{high:g} {unit}</div>',
-        unsafe_allow_html=True,
-    )
+def radio_field(
+    label: str,
+    options,
+    key: str,
+    format_func=None,
+    note: str | None = None,
+    horizontal: bool = True,
+):
+    """A single radio control wrapped in its own field card."""
+    clean_name, dataset_var = clean_label(label)
 
-    desc(note)
-    return value
+    with st.container(border=True, key=f"fc_{key}"):
+        st.markdown(
+            f'<div class="field-card-title-simple" title="{dataset_var}">'
+            f'{clean_name}</div>',
+            unsafe_allow_html=True,
+        )
+
+        kwargs = {} if format_func is None else {"format_func": format_func}
+        result = st.radio(
+            label,
+            options,
+            key=key,
+            horizontal=horizontal,
+            label_visibility="collapsed",
+            **kwargs,
+        )
+
+        if note:
+            desc(note)
+
+    return result
 
 
 def make_prediction(values: dict) -> dict:
@@ -1093,8 +1226,9 @@ def render_result_panel(result: dict | None, mode: str) -> None:
         if predicted_class == 1:
             st.markdown(
                 f"""
-                <div class="result-card result-smoker">
-                    <div class="live-pill">Live prediction</div><div class="kicker">Model prediction</div>
+                <div class="result-card">
+                    <div class="result-status-pill is-smoker">Smoker</div>
+                    <div class="kicker">Model prediction</div>
                     <h3>Predicted class: smoker</h3>
                     <p>
                         The submitted values are more similar to records
@@ -1109,8 +1243,9 @@ def render_result_panel(result: dict | None, mode: str) -> None:
         else:
             st.markdown(
                 f"""
-                <div class="result-card result-nonsmoker">
-                    <div class="live-pill">Live prediction</div><div class="kicker">Model prediction</div>
+                <div class="result-card">
+                    <div class="result-status-pill is-nonsmoker">Non-smoker</div>
+                    <div class="kicker">Model prediction</div>
                     <h3>Predicted class: non-smoker</h3>
                     <p>
                         The submitted values are more similar to records
@@ -1184,8 +1319,8 @@ components.html(
 
         .hero {
             padding: 42px 16px 36px;
-            color: #f3ede4;
-            border-bottom: 1px solid #1f170f;
+            color: #F1F5F9;
+            border-bottom: 1px solid #334155;
         }
 
         .grid {
@@ -1201,9 +1336,9 @@ components.html(
             gap: 8px;
             padding: 7px 14px;
             border-radius: 999px;
-            color: #ff7a3d;
-            background: rgba(255,122,61,.14);
-            border: 1px solid rgba(255,122,61,.35);
+            color: #F97316;
+            background: rgba(249,115,22,.14);
+            border: 1px solid rgba(249,115,22,.35);
             font-family: Consolas, monospace;
             font-size: 11px;
             font-weight: 700;
@@ -1215,14 +1350,14 @@ components.html(
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: #ff7a3d;
-            box-shadow: 0 0 0 3px rgba(255,122,61,.25);
+            background: #F97316;
+            box-shadow: 0 0 0 3px rgba(249,115,22,.25);
         }
 
         h1 {
             max-width: 760px;
             margin: 16px 0 0;
-            color: #f3ede4;
+            color: #F1F5F9;
             font-family: Georgia, serif;
             font-size: clamp(40px, 5.2vw, 68px);
             line-height: .98;
@@ -1231,14 +1366,14 @@ components.html(
         }
 
         h1 em {
-            color: #ff7a3d;
+            color: #F97316;
             font-weight: 500;
         }
 
         p {
             max-width: 560px;
             margin: 16px 0 0;
-            color: #b5aa9d;
+            color: #94A3B8;
             font-size: 16px;
             line-height: 1.7;
         }
@@ -1255,7 +1390,7 @@ components.html(
 
         .gauge-label {
             margin-top: -2px;
-            color: #b5aa9d;
+            color: #94A3B8;
             font-family: Consolas, monospace;
             font-size: 11px;
             font-weight: 700;
@@ -1272,11 +1407,11 @@ components.html(
 
         .meta-item {
             padding-left: 12px;
-            border-left: 2px solid #ff7a3d;
+            border-left: 2px solid #F97316;
         }
 
         .meta-label {
-            color: #b5aa9d;
+            color: #94A3B8;
             font-family: Consolas, monospace;
             font-size: 10px;
             letter-spacing: .1em;
@@ -1285,7 +1420,7 @@ components.html(
 
         .meta-value {
             margin-top: 4px;
-            color: #f3ede4;
+            color: #F1F5F9;
             font-family: Consolas, monospace;
             font-size: 16px;
             font-weight: 700;
@@ -1333,19 +1468,19 @@ components.html(
                 <svg viewBox="0 0 300 165" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20,150 A130,130 0 0,1 280,150"
                           fill="none"
-                          stroke="#2a2019"
+                          stroke="#334155"
                           stroke-width="3"
                           stroke-linecap="round"/>
 
                     <path d="M20,150 A130,130 0 0,1 261,83"
                           fill="none"
-                          stroke="#ff7a3d"
+                          stroke="#F97316"
                           stroke-width="3"
                           stroke-linecap="round"/>
 
                     <circle cx="261" cy="83" r="8"
-                            fill="#100c09"
-                            stroke="#ff7a3d"
+                            fill="#0F172A"
+                            stroke="#F97316"
                             stroke-width="3"/>
 
                     <text x="150" y="122"
@@ -1353,7 +1488,7 @@ components.html(
                           font-family="Consolas, monospace"
                           font-size="36"
                           font-weight="700"
-                          fill="#f3ede4">
+                          fill="#F1F5F9">
                         82.6%
                     </text>
                 </svg>
@@ -1563,26 +1698,26 @@ if mode == "Quick Assessment":
             personal_1, personal_2 = st.columns(2)
 
             with personal_1:
-                gender = st.selectbox(
+                gender = select_field(
                     "Gender (gender)",
                     ["F", "M"],
                     format_func=lambda value: (
                         "Female" if value == "F" else "Male"
                     ),
                     key="quick_gender",
+                    note="Highest-ranked categorical model input.",
                 )
-                desc("Highest-ranked categorical model input.")
 
             with personal_2:
-                height = st.number_input(
+                height = number_field(
                     "Height in centimetres (height(cm))",
-                    min_value=130,
-                    max_value=190,
-                    value=165,
-                    step=5,
+                    130,
+                    190,
+                    165,
+                    5,
                     key="quick_height",
+                    note="Physical measurement with high model importance.",
                 )
-                desc("Physical measurement with high model importance.")
 
         quick_values = REFERENCE_DEFAULTS.copy()
 
@@ -1664,25 +1799,25 @@ else:
                 priority_1, priority_2, priority_3 = st.columns(3)
 
                 with priority_1:
-                    gender = st.selectbox(
+                    gender = select_field(
                         "Gender (gender)",
                         ["F", "M"],
                         format_func=lambda value: (
                             "Female" if value == "F" else "Male"
                         ),
                         key="full_gender",
+                        note="Highest-ranked categorical model input.",
                     )
-                    desc("Highest-ranked categorical model input.")
 
-                    height = st.number_input(
+                    height = number_field(
                         "Height in centimetres (height(cm))",
-                        min_value=130,
-                        max_value=190,
-                        value=165,
-                        step=5,
+                        130,
+                        190,
+                        165,
+                        5,
                         key="full_height",
+                        note="Standing height measured in centimetres.",
                     )
-                    desc("Standing height measured in centimetres.")
 
                 with priority_2:
                     gtp = slider_input(
@@ -1719,58 +1854,58 @@ else:
                         "High-priority blood-fat measurement.",
                     )
 
-                    age = st.number_input(
+                    age = number_field(
                         "Age in years (age)",
-                        min_value=20,
-                        max_value=85,
-                        value=40,
-                        step=5,
+                        20,
+                        85,
+                        40,
+                        5,
                         key="full_age",
+                        note="Age at the time of screening.",
                     )
-                    desc("Age at the time of screening.")
 
             with screening_tab:
                 screening_1, screening_2, screening_3 = st.columns(3)
 
                 with screening_1:
-                    weight = st.number_input(
+                    weight = number_field(
                         "Weight in kilograms (weight(kg))",
-                        min_value=30,
-                        max_value=135,
-                        value=65,
-                        step=5,
+                        30,
+                        135,
+                        65,
+                        5,
                         key="full_weight",
                     )
 
-                    waist = st.number_input(
+                    waist = number_field(
                         "Waist circumference (waist(cm))",
-                        min_value=51.0,
-                        max_value=129.0,
-                        value=82.0,
-                        step=0.5,
+                        51.0,
+                        129.0,
+                        82.0,
+                        0.5,
                         key="full_waist",
                     )
 
                 with screening_2:
-                    eyesight_left = st.number_input(
+                    eyesight_left = number_field(
                         "Left-eye eyesight score (eyesight(left))",
-                        min_value=0.1,
-                        max_value=9.9,
-                        value=1.0,
-                        step=0.1,
+                        0.1,
+                        9.9,
+                        1.0,
+                        0.1,
                         key="full_eyesight_left",
                     )
 
-                    eyesight_right = st.number_input(
+                    eyesight_right = number_field(
                         "Right-eye eyesight score (eyesight(right))",
-                        min_value=0.1,
-                        max_value=9.9,
-                        value=1.0,
-                        step=0.1,
+                        0.1,
+                        9.9,
+                        1.0,
+                        0.1,
                         key="full_eyesight_right",
                     )
 
-                    hearing_left = st.selectbox(
+                    hearing_left = select_field(
                         "Left-ear hearing (hearing(left))",
                         [1.0, 2.0],
                         format_func=lambda value: (
@@ -1781,7 +1916,7 @@ else:
                         key="full_hearing_left",
                     )
 
-                    hearing_right = st.selectbox(
+                    hearing_right = select_field(
                         "Right-ear hearing (hearing(right))",
                         [1.0, 2.0],
                         format_func=lambda value: (
@@ -1793,21 +1928,21 @@ else:
                     )
 
                 with screening_3:
-                    systolic = st.number_input(
+                    systolic = number_field(
                         "Systolic pressure (systolic)",
-                        min_value=71.0,
-                        max_value=240.0,
-                        value=120.0,
-                        step=1.0,
+                        71.0,
+                        240.0,
+                        120.0,
+                        1.0,
                         key="full_systolic",
                     )
 
-                    relaxation = st.number_input(
+                    relaxation = number_field(
                         "Diastolic pressure (relaxation)",
-                        min_value=40.0,
-                        max_value=146.0,
-                        value=76.0,
-                        step=1.0,
+                        40.0,
+                        146.0,
+                        76.0,
+                        1.0,
                         key="full_relaxation",
                     )
 
@@ -1815,73 +1950,73 @@ else:
                 blood_1, blood_2, blood_3 = st.columns(3)
 
                 with blood_1:
-                    fasting = st.number_input(
+                    fasting = number_field(
                         "Fasting blood glucose (fasting blood sugar)",
-                        min_value=46.0,
-                        max_value=505.0,
-                        value=96.0,
-                        step=1.0,
+                        46.0,
+                        505.0,
+                        96.0,
+                        1.0,
                         key="full_fasting",
                     )
 
-                    cholesterol = st.number_input(
+                    cholesterol = number_field(
                         "Total cholesterol (Cholesterol)",
-                        min_value=55.0,
-                        max_value=445.0,
-                        value=195.0,
-                        step=1.0,
+                        55.0,
+                        445.0,
+                        195.0,
+                        1.0,
                         key="full_cholesterol",
                     )
 
-                    hdl = st.number_input(
+                    hdl = number_field(
                         "HDL (HDL)",
-                        min_value=4.0,
-                        max_value=618.0,
-                        value=55.0,
-                        step=1.0,
+                        4.0,
+                        618.0,
+                        55.0,
+                        1.0,
                         key="full_hdl",
                     )
 
-                    ldl = st.number_input(
+                    ldl = number_field(
                         "LDL (LDL)",
-                        min_value=1.0,
-                        max_value=1860.0,
-                        value=113.0,
-                        step=1.0,
+                        1.0,
+                        1860.0,
+                        113.0,
+                        1.0,
                         key="full_ldl",
                     )
 
                 with blood_2:
-                    urine = st.selectbox(
+                    urine = select_field(
                         "Urine protein category (Urine protein)",
                         [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
                         key="full_urine",
                     )
 
-                    creatinine = st.number_input(
+                    creatinine = number_field(
                         "Serum creatinine (serum creatinine)",
-                        min_value=0.1,
-                        max_value=11.6,
-                        value=0.9,
-                        step=0.1,
+                        0.1,
+                        11.6,
+                        0.9,
+                        0.1,
                         key="full_creatinine",
                     )
 
-                    ast = st.number_input(
+                    ast = number_field(
                         "AST (AST)",
-                        min_value=6.0,
-                        max_value=1311.0,
-                        value=23.0,
-                        step=1.0,
+                        6.0,
+                        1311.0,
+                        23.0,
+                        1.0,
                         key="full_ast",
                     )
 
-                    alt = st.number_input(
+                    alt = number_field(
                         "ALT (ALT)",
-                        min_value=1.0,
-                        max_value=2914.0,
-                        value=21.0,
-                        step=1.0,
+                        1.0,
+                        2914.0,
+                        21.0,
+                        1.0,
                         key="full_alt",
                     )
 
@@ -1900,21 +2035,19 @@ else:
                 oral_1, oral_2 = st.columns(2)
 
                 with oral_1:
-                    caries_answer = st.radio(
+                    caries_answer = radio_field(
                         "Dental caries present? (dental caries)",
                         ["No", "Yes"],
-                        horizontal=True,
                         key="full_caries",
                     )
 
                 with oral_2:
-                    tartar = st.radio(
+                    tartar = radio_field(
                         "Tartar present? (tartar)",
                         ["N", "Y"],
                         format_func=lambda value: (
                             "No" if value == "N" else "Yes"
                         ),
-                        horizontal=True,
                         key="full_tartar",
                     )
 
