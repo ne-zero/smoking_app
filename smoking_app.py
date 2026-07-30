@@ -205,6 +205,7 @@ st.markdown(
         color:var(--ink-soft)!important;
     }
 
+    /* NOTE: .hero-gauge*/.hero-meta below are unused (real hero is in the components.html iframe, see IMPRESSIVE TOP SECTION). Safe to delete. */
     .hero-gauge-wrap{text-align:center}
 
     .hero-gauge{
@@ -399,6 +400,7 @@ st.markdown(
 
     .stCaption{color:var(--ink-soft)!important}
 
+    /* Small muted caption line under a field card (rendered by desc()). */
     .field-note{
         margin-top:-.3rem;
         margin-bottom:.9rem;
@@ -411,6 +413,7 @@ st.markdown(
         line-height:1.42;
     }
 
+    /* Accent-colored callout box (feature-priority / Quick-mode cards). */
     .info-box{
         padding:.85rem 1rem;
         border-radius:14px;
@@ -422,6 +425,7 @@ st.markdown(
         margin-bottom:1rem;
     }
 
+    /* Amber callout variant — currently unused, kept for future reuse. */
     .warn-box{
         padding:.85rem 1rem;
         border-radius:14px;
@@ -432,6 +436,7 @@ st.markdown(
         line-height:1.55;
     }
 
+    /* st.tabs() styling — accent color for the active tab + underline. */
     div[data-testid="stTabs"] button{
         color:var(--ink-dim)!important;
         font-weight:600!important;
@@ -449,6 +454,7 @@ st.markdown(
         background-color:var(--line)!important;
     }
 
+    /* BaseWeb = the component library behind Streamlit's inputs/selects. */
     div[data-baseweb="input"],
     div[data-baseweb="input"]>div,
     div[data-baseweb="base-input"],
@@ -553,8 +559,7 @@ st.markdown(
         color:var(--ink-soft)!important;
     }
 
-    /* Status pill communicates smoker/non-smoker instead of a full-card
-       colored background — keeps solid red reserved for critical states. */
+    /* Status pill (not a full-card color) so red stays reserved for critical states. */
     .result-status-pill{
         display:inline-flex;
         align-items:center;
@@ -660,6 +665,7 @@ st.markdown(
         color:var(--ink-soft)!important;
     }
 
+    /* Small "MODEL SMOKER SCORE" label under the result percentage. */
     .result-caption{
         font-family:var(--font-mono);
         font-size:.69rem;
@@ -668,6 +674,7 @@ st.markdown(
         color:var(--ink-soft)!important;
     }
 
+    /* Page footer disclaimer text. */
     .foot{
         font-size:.84rem;
         line-height:1.6;
@@ -675,6 +682,7 @@ st.markdown(
     }
 
     @media(max-width:900px){
+        /* .hero-grid/.hero-gauge* are unused; .result-sticky is the real rule. */
         .hero-grid{
             flex-direction:column;
             align-items:flex-start;
@@ -744,8 +752,7 @@ st.markdown(
         display:none!important;
     }
 
-    /* One consistent accent color for every slider track/thumb — status
-       is communicated by the pill badge below the slider, not track color. */
+    /* One accent color for every slider — status comes from the pill badge, not track color. */
     div[data-testid="stSlider"] div[data-baseweb="slider"] > div:first-child{
         background:var(--line)!important;
     }
@@ -762,9 +769,7 @@ st.markdown(
 
 
 
-    /* =====================================================
-       SINGLE NUMBER INPUT (the one editable value per card)
-       ===================================================== */
+    /* SINGLE NUMBER INPUT — the one editable value per card. */
     div[data-testid="stNumberInput"]{
         min-width:0!important;
     }
@@ -812,9 +817,7 @@ st.markdown(
         margin:.25rem 0 .8rem!important;
     }
 
-    /* =====================================================
-       FIELD CARDS — one self-contained card per input
-       ===================================================== */
+    /* FIELD CARDS — targets every st.container(key="card_x"/"fc_x") via its auto-added "st-key-<key>" class. */
     div[class*="st-key-card_"],
     div[class*="st-key-fc_"]{
         background:#1E293B!important;
@@ -845,8 +848,7 @@ st.markdown(
         margin-bottom:.35rem;
     }
 
-    /* Genuine clinical abbreviation shown in subtle parentheses next to
-       the full formal name — e.g. High-Density Lipoprotein (HDL). */
+    /* Abbreviation in subtle parens next to the full name, e.g. HDL. */
     .field-card-abbr{
         font-size:12px;
         font-weight:500;
@@ -888,10 +890,12 @@ st.markdown(
 # =========================================================
 # MODEL FILES
 # =========================================================
+# The trained model + the exact column order it was trained on.
 APP_FOLDER = Path(__file__).resolve().parent
 MODEL_PATH = APP_FOLDER / "smoking_random_forest_model.pkl"
 FEATURE_PATH = APP_FOLDER / "smoking_feature_columns.pkl"
 
+# Fallback values for model features Quick Assessment doesn't ask about.
 REFERENCE_DEFAULTS = {
     "age": 40,
     "height(cm)": 165,
@@ -916,6 +920,7 @@ REFERENCE_DEFAULTS = {
 }
 
 
+# Reference bands for the 3 top-priority lab features (always visible).
 PRIORITY_REFERENCE_BANDS = {
     "Gtp": {
         "low": 8.0,
@@ -937,12 +942,7 @@ PRIORITY_REFERENCE_BANDS = {
     },
 }
 
-# Reference bands for additional numeric cards beyond the top-5 priority
-# features. "within" = normal is between low/high; "higher_better" = above
-# `high` is good, below `low` is bad (e.g. HDL); "lower_better" = below
-# `low` is good, above `high` is bad (e.g. LDL). Ranges are standard
-# clinical reference intervals for an educational prototype, not
-# individualized medical guidance.
+# Reference bands for the remaining numeric cards ("higher_better"=HDL, "lower_better"=LDL, else within-range).
 CLINICAL_BANDS = {
     "fasting": {"low": 70.0, "high": 99.0, "unit": "mg/dL", "direction": "within"},
     "cholesterol": {"low": 125.0, "high": 199.0, "unit": "mg/dL", "direction": "within"},
@@ -957,8 +957,7 @@ CLINICAL_BANDS = {
 
 
 def bmi_weight_band(height_cm: float) -> dict:
-    """A healthy-weight range (BMI 18.5–24.9) for the given height, so the
-    weight card can show a status badge without a fixed universal cutoff."""
+    """Healthy-weight range (BMI 18.5-24.9) for the given height."""
     height_m = height_cm / 100.0
     return {
         "low": round(18.5 * height_m ** 2, 1),
@@ -969,12 +968,13 @@ def bmi_weight_band(height_cm: float) -> dict:
 
 
 def waist_band(gender: str) -> dict:
-    """Standard gender-specific waist circumference thresholds
-    (elevated cardiometabolic risk above the high cutoff)."""
+    """Standard gender-specific waist circumference thresholds."""
     if gender == "M":
         return {"low": 93.9, "high": 101.9, "unit": "cm", "direction": "lower_better"}
     return {"low": 79.9, "high": 87.9, "unit": "cm", "direction": "lower_better"}
 
+
+# The 5 highest-importance features — the only inputs in Quick Assessment.
 PRIORITY_FEATURES = {
     "gender",
     "Gtp",
@@ -986,6 +986,7 @@ PRIORITY_FEATURES = {
 
 @st.cache_resource
 def load_files():
+    """Load the model + feature-column list once per session (cached)."""
     if not MODEL_PATH.exists() or not FEATURE_PATH.exists():
         raise FileNotFoundError(
             "Place smoking_random_forest_model.pkl and "
@@ -1005,6 +1006,7 @@ def load_files():
     return loaded_model, loaded_columns
 
 
+# Fail fast and visibly if the model can't load.
 try:
     model, feature_columns = load_files()
 except Exception as exc:
@@ -1017,6 +1019,7 @@ except Exception as exc:
 # HELPERS
 # =========================================================
 def desc(text: str) -> None:
+    """Small muted helper-text line under a field card."""
     st.markdown(
         f'<div class="field-note">{text}</div>',
         unsafe_allow_html=True,
@@ -1024,12 +1027,12 @@ def desc(text: str) -> None:
 
 
 def binary(answer: str) -> int:
+    """Convert a Yes/No radio answer into the 0/1 the model expects."""
     return 1 if answer == "Yes" else 0
 
 
 def clean_label(label: str) -> tuple[str, str]:
-    """Split 'Field Name (dataset_var)' into a clean label plus whatever
-    is in the trailing parentheses."""
+    """Split 'Field Name (dataset_var)' into name + trailing parens."""
     if "(" in label and label.endswith(")"):
         head, _, tail = label.rpartition("(")
         return head.strip(), tail[:-1].strip()
@@ -1037,9 +1040,7 @@ def clean_label(label: str) -> tuple[str, str]:
 
 
 def _is_real_abbreviation(paren: str) -> bool:
-    """True only for genuine clinical abbreviations (HDL, AST, Gtp...),
-    not raw snake_case dataset variable names (fasting blood sugar,
-    gender, tartar...), so we don't surface internal plumbing to users."""
+    """True only for genuine abbreviations (HDL), not raw dataset vars."""
     return (
         bool(paren)
         and " " not in paren
@@ -1049,8 +1050,7 @@ def _is_real_abbreviation(paren: str) -> bool:
 
 
 def field_title_html(label: str, css_class: str) -> str:
-    """Card header markup: full formal name as the main title, with a
-    genuine abbreviation shown in subtle parentheses next to it."""
+    """Card header: full name, with a real abbreviation in subtle parens."""
     clean_name, paren = clean_label(label)
 
     if _is_real_abbreviation(paren):
@@ -1063,9 +1063,7 @@ def field_title_html(label: str, css_class: str) -> str:
 
 
 def classify_status(value: float, band: dict) -> tuple[str, str]:
-    """Classify a value into Good/Average/Bad against a reference band,
-    honoring the band's direction (within-range, higher-is-better, or
-    lower-is-better)."""
+    """Classify a value as Good/Average/Bad per the band's direction."""
     low = band["low"]
     high = band["high"]
     direction = band.get("direction", "within")
@@ -1096,24 +1094,20 @@ def classify_status(value: float, band: dict) -> tuple[str, str]:
 
 
 def format_value(value: float) -> str:
-    """Render a number without a trailing decimal point or padding zero
-    (e.g. 999 instead of 999.00, 21.1 instead of 21.10)."""
+    """Render a number without a trailing decimal point (999, not 999.00)."""
     text = f"{value:g}"
     return text
 
 
 def step_format(step, value):
-    """Pick a number_input display format from the step size so values
-    show only the precision they need (999, not 999.00 or 999.). Returns
-    None for plain int widgets, since Streamlit already renders those
-    cleanly; float widgets get an explicit f-style format (Streamlit
-    rejects %d on float-typed inputs)."""
+    """Pick a number_input format from the step size (avoids 999.00/999.)."""
     if isinstance(value, int) and isinstance(step, int):
         return None
     return "%.0f" if float(step).is_integer() else "%.1f"
 
 
 def encode(values: dict) -> pd.DataFrame:
+    """Turn the form's values dict into the one-hot-encoded model input."""
     frame = pd.DataFrame([values])
 
     frame = pd.get_dummies(
@@ -1130,22 +1124,23 @@ def encode(values: dict) -> pd.DataFrame:
 
 
 def validate(values: dict) -> list[str]:
-    errors = []
+    """Flag physiologically-odd input combos as warnings (non-blocking)."""
+    warnings = []
 
     if values["systolic"] <= values["relaxation"]:
-        errors.append(
+        warnings.append(
             "Systolic pressure must be higher than diastolic pressure."
         )
 
     if values["HDL"] > values["Cholesterol"]:
-        errors.append(
+        warnings.append(
             "HDL cannot be greater than total cholesterol."
         )
 
-    return errors
+    return warnings
 
 
-
+# Keep each field's slider and number box synced to the same value.
 def _sync_slider_to_number(widget_key: str) -> None:
     st.session_state[f"{widget_key}_number"] = st.session_state[
         f"{widget_key}_slider"
@@ -1158,6 +1153,7 @@ def _sync_number_to_slider(
     maximum: float,
 ) -> None:
     typed_value = st.session_state[f"{widget_key}_number"]
+    # Clamp so an out-of-range typed value can't break the slider.
     st.session_state[f"{widget_key}_slider"] = max(
         minimum,
         min(maximum, typed_value),
@@ -1174,10 +1170,7 @@ def clinical_field(
     note: str,
     band: dict,
 ) -> float:
-    """Render one self-contained field card: header (full name + genuine
-    abbreviation + single editable value), a full-width slider, a
-    reference/status row, and a footer note — with only one place the
-    numeric value is displayed."""
+    """One field card: title + number input, slider, status row, note."""
     slider_key = f"{key}_slider"
     number_key = f"{key}_number"
 
@@ -1231,7 +1224,7 @@ def clinical_field(
         value = st.session_state[number_key]
         status_text, status_class = classify_status(value, band)
 
-        # ---- Status & reference row
+        # Status & reference row (≥X = higher-better, ≤X = lower-better, else a range)
         ref_text = (
             f"Ref: ≥{format_value(high)} {unit}"
             if band.get("direction") == "higher_better"
@@ -1373,6 +1366,7 @@ def radio_field(
 
 
 def make_prediction(values: dict) -> dict:
+    """Run inputs through the model; return predicted class + smoker score."""
     model_input = encode(values)
 
     predicted_class = int(model.predict(model_input)[0])
@@ -1385,6 +1379,7 @@ def make_prediction(values: dict) -> dict:
 
 
 def render_result_panel(result: dict | None, mode: str) -> None:
+    """Draw the sticky result card (placeholder, or themed score + risk bar)."""
     st.markdown('<div class="result-sticky">', unsafe_allow_html=True)
 
     if result is None:
@@ -1507,8 +1502,7 @@ if "prediction_inputs" not in st.session_state:
 # IMPRESSIVE TOP SECTION
 # =========================================================
 def _build_signal_path(period_width: int = 140, periods: int = 8, baseline: int = 34) -> str:
-    """A repeating 'signal pulse' line, drawn twice-over (periods=8 covers
-    2x the visible 4-period window) so a -50% CSS translate loops seamlessly."""
+    """Repeating signal-pulse path; drawn 2x wide so -50% translate loops."""
     segments = [f"M0,{baseline}"]
     for i in range(periods):
         x0 = i * period_width
@@ -1836,9 +1830,14 @@ components.html(
 st.write("")
 st.write("")
 
+# =========================================================
+# INFO CARDS + ASSESSMENT MODE SELECTOR
+# =========================================================
+# Two explanatory cards + the mode selector radio that picks the form below.
 info_left, info_right = st.columns([1.55, 1])
 
 with info_left:
+    # Numbered pills listing the 5 PRIORITY_FEATURES, purely for display.
     priority_pills = "".join(
         f'<span class="pill"><b>{index + 1}</b>{name}</span>'
         for index, name in enumerate(
@@ -1893,6 +1892,7 @@ st.write("")
 mode_actions, reset_actions = st.columns([4, 1])
 
 with mode_actions:
+    # Drives the if/else below that swaps between Quick and Full Assessment.
     mode = st.radio(
         "Assessment mode",
         ["Quick Assessment", "Full Assessment"],
@@ -1918,6 +1918,7 @@ form_column, result_column = st.columns([1.75, 1], gap="large")
 # ---------------------------------------------------------
 # QUICK ASSESSMENT
 # ---------------------------------------------------------
+# Quick Assessment: only the 5 PRIORITY_FEATURES come from the user (rest = REFERENCE_DEFAULTS).
 if mode == "Quick Assessment":
     with form_column:
         st.markdown(
@@ -1961,7 +1962,7 @@ if mode == "Quick Assessment":
                     "Gtp",
                     "Gamma-glutamyl transferase (Gtp)",
                     1.0,
-                    999.0,
+                    300.0,
                     25.0,
                     1.0,
                     "quick_gtp",
@@ -1985,7 +1986,7 @@ if mode == "Quick Assessment":
                     "triglyceride",
                     "Triglycerides (triglyceride)",
                     8.0,
-                    999.0,
+                    500.0,
                     108.0,
                     1.0,
                     "quick_triglyceride",
@@ -2027,6 +2028,7 @@ if mode == "Quick Assessment":
                     note="Physical measurement with high model importance.",
                 )
 
+        # Start from the defaults, then overwrite the 5 user-entered fields.
         quick_values = REFERENCE_DEFAULTS.copy()
 
         quick_values.update(
@@ -2039,18 +2041,15 @@ if mode == "Quick Assessment":
             }
         )
 
-        errors = validate(quick_values)
+        # No "Predict" button — reruns live on every widget change (validate() only warns, never blocks).
+        warnings = validate(quick_values)
 
-        if errors:
-            st.session_state.prediction_result = None
-            for error in errors:
-                st.error(error)
-        else:
-            st.session_state.prediction_result = make_prediction(
-                quick_values
-            )
-            st.session_state.prediction_inputs = quick_values
-            st.session_state.prediction_mode = mode
+        for warning_text in warnings:
+            st.warning(warning_text)
+
+        st.session_state.prediction_result = make_prediction(quick_values)
+        st.session_state.prediction_inputs = quick_values
+        st.session_state.prediction_mode = mode
 
     with result_column:
         render_result_panel(
@@ -2062,6 +2061,7 @@ if mode == "Quick Assessment":
 # ---------------------------------------------------------
 # FULL ASSESSMENT
 # ---------------------------------------------------------
+# Every model feature is collected directly from the user across 4 tabs.
 else:
     with form_column:
         st.markdown(
@@ -2084,6 +2084,7 @@ else:
         st.write("")
 
         with st.container(border=True):
+            # All 4 tabs' widgets run every rerun regardless of active tab, so full_values below can safely read every tab's variables.
             priority_tab, screening_tab, blood_tab, oral_tab = st.tabs(
                 [
                     "1. Priority inputs",
@@ -2093,6 +2094,7 @@ else:
                 ]
             )
 
+            # Tab 1: the same 5 PRIORITY_FEATURES shown in Quick Assessment.
             with priority_tab:
                 st.markdown(
                     """
@@ -2132,7 +2134,7 @@ else:
                         "Gtp",
                         "Gamma-glutamyl transferase (Gtp)",
                         1.0,
-                        999.0,
+                        300.0,
                         25.0,
                         1.0,
                         "full_gtp",
@@ -2155,7 +2157,7 @@ else:
                         "triglyceride",
                         "Triglycerides (triglyceride)",
                         8.0,
-                        999.0,
+                        500.0,
                         108.0,
                         1.0,
                         "full_triglyceride",
@@ -2172,6 +2174,7 @@ else:
                         note="Age at the time of screening.",
                     )
 
+            # Tab 2: basic vitals. weight/waist reuse height/gender from priority_tab (safe, see comment above).
             with screening_tab:
                 screening_1, screening_2, screening_3 = st.columns(3)
 
@@ -2233,7 +2236,7 @@ else:
                     relaxation = clinical_field(
                         "Diastolic Pressure (relaxation)",
                         40.0,
-                        146.0,
+                        130.0,
                         76.0,
                         1.0,
                         "full_relaxation",
@@ -2243,6 +2246,7 @@ else:
 
                 st.write("")
 
+                # Own full-width row so L/R hearing sit side by side.
                 hearing_left_col, hearing_right_col = st.columns(2)
 
                 with hearing_left_col:
@@ -2269,8 +2273,9 @@ else:
                         key="full_hearing_right",
                     )
 
+            # Tab 3: remaining lab values, each with a slider + status badge.
             with blood_tab:
-                blood_1, blood_2, blood_3 = st.columns(3)
+                blood_1, blood_2 = st.columns(2)
 
                 with blood_1:
                     fasting = clinical_field(
@@ -2298,7 +2303,7 @@ else:
                     hdl = clinical_field(
                         "High-Density Lipoprotein (HDL)",
                         4.0,
-                        618.0,
+                        150.0,
                         55.0,
                         1.0,
                         "full_hdl",
@@ -2309,7 +2314,7 @@ else:
                     ldl = clinical_field(
                         "Low-Density Lipoprotein (LDL)",
                         1.0,
-                        1860.0,
+                        400.0,
                         113.0,
                         1.0,
                         "full_ldl",
@@ -2338,7 +2343,7 @@ else:
                     ast = clinical_field(
                         "Aspartate Aminotransferase (AST)",
                         6.0,
-                        1311.0,
+                        500.0,
                         23.0,
                         1.0,
                         "full_ast",
@@ -2349,7 +2354,7 @@ else:
                     alt = clinical_field(
                         "Alanine Aminotransferase (ALT)",
                         1.0,
-                        2914.0,
+                        500.0,
                         21.0,
                         1.0,
                         "full_alt",
@@ -2357,17 +2362,7 @@ else:
                         CLINICAL_BANDS["alt"],
                     )
 
-                with blood_3:
-                    st.markdown(
-                        """
-                        <div class="warn-box">
-                            Lower-ranked features were retained because the
-                            reduced-feature experiment produced weaker results.
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
+            # Tab 4: the two remaining binary/categorical model features.
             with oral_tab:
                 oral_1, oral_2 = st.columns(2)
 
@@ -2415,18 +2410,15 @@ else:
             "tartar": tartar,
         }
 
-        errors = validate(full_values)
+        # Same live-prediction pattern as Quick Assessment (see above).
+        warnings = validate(full_values)
 
-        if errors:
-            st.session_state.prediction_result = None
-            for error in errors:
-                st.error(error)
-        else:
-            st.session_state.prediction_result = make_prediction(
-                full_values
-            )
-            st.session_state.prediction_inputs = full_values
-            st.session_state.prediction_mode = mode
+        for warning_text in warnings:
+            st.warning(warning_text)
+
+        st.session_state.prediction_result = make_prediction(full_values)
+        st.session_state.prediction_inputs = full_values
+        st.session_state.prediction_mode = mode
 
     with result_column:
         render_result_panel(
@@ -2444,6 +2436,7 @@ if st.session_state.prediction_inputs is not None:
     with st.expander("Review values supplied to the model"):
         values = st.session_state.prediction_inputs
 
+        # Full Assessment: everything is user-entered. Quick Assessment: only the 5 PRIORITY_FEATURES are (rest = REFERENCE_DEFAULTS).
         review_table = pd.DataFrame(
             {
                 "Feature": list(values.keys()),
