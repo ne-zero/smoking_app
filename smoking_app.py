@@ -1772,7 +1772,7 @@ _hero_html = """
             </div>
 
             <div class="accuracy-card">
-                <div class="accuracy-eyebrow">Hero accuracy</div>
+                <div class="accuracy-eyebrow">Model Accuracy</div>
 
                 <div class="signal-strip">
                     <svg viewBox="0 0 560 60" preserveAspectRatio="none"
