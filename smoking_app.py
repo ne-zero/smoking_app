@@ -1196,6 +1196,14 @@ def clinical_field(
     if number_key not in st.session_state:
         st.session_state[number_key] = default
 
+    # Clamp any leftover/stale session value to the current min/max bounds.
+    st.session_state[slider_key] = max(
+        minimum, min(maximum, st.session_state[slider_key])
+    )
+    st.session_state[number_key] = max(
+        minimum, min(maximum, st.session_state[number_key])
+    )
+
     low = band["low"]
     high = band["high"]
     unit = band["unit"]
@@ -1211,11 +1219,11 @@ def clinical_field(
             )
 
         with header_input:
+            # No value= — key= alone binds this to session_state (avoids a conflict with the on_change callback's own session_state write).
             st.number_input(
                 f"{label} exact value",
                 min_value=minimum,
                 max_value=maximum,
-                value=st.session_state[number_key],
                 step=step,
                 key=number_key,
                 format=step_format(step, st.session_state[number_key]),
@@ -1224,12 +1232,11 @@ def clinical_field(
                 args=(key, minimum, maximum),
             )
 
-        # ---- Slider row: full width, no overlaid text
+        # ---- Slider row: full width, no overlaid text (same value= removal as above)
         st.slider(
             label,
             min_value=minimum,
             max_value=maximum,
-            value=st.session_state[slider_key],
             step=step,
             key=slider_key,
             label_visibility="collapsed",
@@ -1772,7 +1779,7 @@ _hero_html = """
             </div>
 
             <div class="accuracy-card">
-                <div class="accuracy-eyebrow">Primary Metric</div>
+                <div class="accuracy-eyebrow">Hero accuracy</div>
 
                 <div class="signal-strip">
                     <svg viewBox="0 0 560 60" preserveAspectRatio="none"
@@ -2036,8 +2043,8 @@ if mode == "Quick Assessment":
             with personal_2:
                 height = number_field(
                     "Height in Centimetres",
-                    100,
-                    220,
+                    130,
+                    190,
                     165,
                     5,
                     key="quick_height",
@@ -2137,8 +2144,8 @@ else:
 
                     height = number_field(
                         "Height in Centimetres",
-                        100,
-                        220,
+                        130,
+                        190,
                         165,
                         5,
                         key="full_height",
